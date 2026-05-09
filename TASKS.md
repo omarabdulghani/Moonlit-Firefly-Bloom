@@ -208,6 +208,13 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Position background assets responsively for desktop and mobile.
 - [x] Preserve gameplay, HUD, input, scoring, powerup, and restart behavior.
 
+## Phase 7.8: Background Asset Opacity Tuning
+
+- [x] Increase railing opacity slightly so it feels more physically present.
+- [x] Increase plant silhouette opacity slightly so they feel less ghost-like.
+- [x] Keep skyline opacity and background layout unchanged.
+- [x] Preserve gameplay, HUD, input, scoring, powerup, and restart behavior.
+
 ## Phase 8: Mobile Testing
 
 - [x] Check canvas sizing against visible mobile viewport behavior.

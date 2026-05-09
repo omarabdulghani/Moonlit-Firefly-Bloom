@@ -153,6 +153,13 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: Layered assets make the rooftop scene feel more intentional without replacing the whole background or making gameplay readability depend on one full-screen image.
 - Alternatives considered: Keeping all background details code-drawn, importing one full background image, animating scenery, adding a larger asset pipeline.
 
+### Background Asset Opacity Tuning
+
+- Date: `2026-05-10`
+- Decision: Increase the railing and plant silhouette opacity slightly while leaving skyline opacity and layout unchanged.
+- Reason: The railing and plants should feel more physical and intentional, especially on mobile, without competing with gameplay elements.
+- Alternatives considered: Brightening all background assets, changing layout, replacing assets, leaving the railing and plants very faint.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`

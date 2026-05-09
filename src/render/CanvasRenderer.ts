@@ -313,7 +313,7 @@ export class CanvasRenderer {
     const drawY = height - drawHeight * visibleBottomRatio + Math.min(8, height * 0.012);
 
     ctx.save();
-    ctx.globalAlpha = width < 520 ? 0.5 : 0.64;
+    ctx.globalAlpha = width < 520 ? 0.94 : 1;
     ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
     ctx.restore();
   }
@@ -338,7 +338,7 @@ export class CanvasRenderer {
         -plantHeight * 0.23,
         height - plantHeight,
         plantHeight,
-        width < 520 ? 0.46 : 0.58,
+        width < 520 ? 0.78 : 0.86,
       );
     }
 
@@ -352,7 +352,7 @@ export class CanvasRenderer {
         width - rightWidth + plantHeight * 0.24,
         height - plantHeight,
         plantHeight,
-        width < 520 ? 0.46 : 0.58,
+        width < 520 ? 0.78 : 0.86,
       );
     }
   }
