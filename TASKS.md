@@ -138,6 +138,76 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Keep the background minimal and secondary to gameplay.
 - [x] Preserve gameplay tuning, HUD behavior, and run flow.
 
+## Phase 7.2: Core Fun Pass
+
+- [x] Add stronger shadow-contact feedback with a brief dark vignette flash.
+- [x] Make the firefly dim and flicker more clearly while touching shadows.
+- [x] Trigger Bloom Burst when collecting moonlight at high or full glow.
+- [x] Add a short Bloom Burst ring, glow pulse, and `Bloom!` text.
+- [x] Award a small Bloom Burst bonus score.
+- [x] Push nearby shadows away slightly during Bloom Burst.
+- [x] Track Bloom Bursts per run and show the count on game over.
+- [x] Preserve existing movement, glow drain, orb restore, hazard count, and core loop tuning.
+
+## Phase 7.3: Night Level Escalation
+
+- [x] Add in-run Night Level starting at 1.
+- [x] Increase Night Level from Bloom Burst count.
+- [x] Show current Night Level in the gameplay HUD.
+- [x] Show a short level-up message when the night deepens.
+- [x] Increase passive glow drain gently by Night Level.
+- [x] Increase shadow drift speed gently by Night Level.
+- [x] Add extra shadows at higher Night Levels, capped for readability.
+- [x] Track and show highest Night Level reached on game over.
+- [x] Preserve Bloom Burst scoring, orb scoring, movement, restart flow, and best score behavior.
+
+## Phase 7.4: Infinite Night Pacing
+
+- [x] Keep Night Level infinite with no fixed level cap.
+- [x] Slow Night progression to three Bloom Bursts per Night Level.
+- [x] Add a short Bloom Burst cooldown to prevent rapid repeats.
+- [x] Make Bloom Burst spend glow after triggering.
+- [x] Preserve Bloom Burst bonus score, visual pulse, text, and shadow push.
+- [x] Keep gradual passive drain and shadow speed scaling by Night Level.
+- [x] Keep shadow count capped for readability and performance.
+- [x] Show deepest Night reached on game over.
+- [x] Preserve movement, orb values, shadow damage, restart flow, best score, and mobile behavior.
+
+## Phase 7.5: Moon Shield Powerup
+
+- [x] Add one rare Moon Shield pickup entity.
+- [x] Delay first Moon Shield spawn and respawn it only occasionally.
+- [x] Spawn Moon Shield away from the firefly, shadows, and moonlight orbs.
+- [x] Activate a temporary shield when collected.
+- [x] Prevent shadow damage while Moon Shield is active.
+- [x] Keep passive glow drain, orb collection, Bloom Burst, Night Level, and scoring unchanged.
+- [x] Render a distinct cyan/silver Moon Shield pickup.
+- [x] Render a protective aura around the firefly while shielded.
+- [x] Show Moon Shield remaining time in the HUD while active.
+- [x] Reset Moon Shield pickup, timer, and shield state on new run.
+
+## Phase 7.6: Subtle Rooftop Background Atmosphere
+
+- [x] Refine the code-drawn night sky gradient.
+- [x] Keep the moon soft, pale, and low-distraction.
+- [x] Add a low-contrast distant city skyline.
+- [x] Add sparse, dim window lights for rooftop-city mood.
+- [x] Clarify the balcony ledge and railing as background scenery.
+- [x] Add subtle plant silhouettes anchored to the bottom corners.
+- [x] Keep all background elements behind gameplay and low contrast.
+- [x] Preserve gameplay, HUD, input, scoring, powerup, and restart behavior.
+
+## Phase 7.7: Transparent Background Asset Layers
+
+- [x] Copy transparent background PNGs into a Vite public asset path.
+- [x] Use simple runtime paths for skyline, railing, and plant assets.
+- [x] Replace the code-drawn skyline, railing, and plant silhouettes.
+- [x] Keep the sky gradient and moon code-drawn.
+- [x] Add sparse deterministic stars with canvas drawing.
+- [x] Render skyline, railing, and plant assets behind gameplay.
+- [x] Position background assets responsively for desktop and mobile.
+- [x] Preserve gameplay, HUD, input, scoring, powerup, and restart behavior.
+
 ## Phase 8: Mobile Testing
 
 - [x] Check canvas sizing against visible mobile viewport behavior.

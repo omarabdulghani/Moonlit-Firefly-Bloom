@@ -26,9 +26,31 @@ export class ShadowHazard {
     this.reset(bounds, avoidPoints);
   }
 
-  update(deltaTime: number, bounds: CanvasSize): void {
-    this.x += this.velocityX * deltaTime;
-    this.y += this.velocityY * deltaTime;
+  update(deltaTime: number, bounds: CanvasSize, speedMultiplier: number): void {
+    this.x += this.velocityX * speedMultiplier * deltaTime;
+    this.y += this.velocityY * speedMultiplier * deltaTime;
+    this.keepInside(bounds);
+  }
+
+  pushAwayFrom(origin: Vector2, burstRadius: number, pushStrength: number, bounds: CanvasSize): void {
+    const dx = this.x - origin.x;
+    const dy = this.y - origin.y;
+    const distance = Math.hypot(dx, dy);
+
+    if (distance > burstRadius) {
+      return;
+    }
+
+    const directionX = distance === 0 ? 1 : dx / distance;
+    const directionY = distance === 0 ? 0 : dy / distance;
+    const influence = 1 - distance / burstRadius;
+    const pushDistance = pushStrength * influence;
+
+    this.x += directionX * pushDistance;
+    this.y += directionY * pushDistance;
+    this.velocityX += directionX * pushDistance * 0.45;
+    this.velocityY += directionY * pushDistance * 0.45;
+    this.limitBurstSpeed();
     this.keepInside(bounds);
   }
 
@@ -99,6 +121,18 @@ export class ShadowHazard {
 
     this.velocityX = Math.cos(angle) * speed;
     this.velocityY = Math.sin(angle) * speed;
+  }
+
+  private limitBurstSpeed(): void {
+    const maxBurstSpeed = 44;
+    const speed = Math.hypot(this.velocityX, this.velocityY);
+
+    if (speed <= maxBurstSpeed) {
+      return;
+    }
+
+    this.velocityX = (this.velocityX / speed) * maxBurstSpeed;
+    this.velocityY = (this.velocityY / speed) * maxBurstSpeed;
   }
 
   private isFarEnoughFromAvoidPoints(candidate: Vector2, avoidPoints: Vector2[]): boolean {

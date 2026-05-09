@@ -111,6 +111,48 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: The MVP should remain playable and readable on phone-sized screens without adding virtual buttons, menus, new controls, or gameplay changes.
 - Alternatives considered: Virtual joystick UI, mobile-only movement tuning, leaving touch directly under the finger, relying only on `100vh`.
 
+### Bloom Burst and Stronger Shadow Feedback
+
+- Date: `2026-05-09`
+- Decision: Add a brief Bloom Burst reward when collecting moonlight at high/full glow, plus stronger shadow-contact feedback through firefly dimming and a short dark vignette flash.
+- Reason: The core loop needed a clearer negative moment for being drained and a small positive "yes" moment for collecting light while already glowing, without adding upgrades, combos, particles, sound, menus, or new enemies.
+- Alternatives considered: Combo scoring, permanent upgrades, destroying shadows, sound feedback, particle bursts, leaving orb collection and shadow contact as flat visual events.
+
+### In-Run Night Level Escalation
+
+- Date: `2026-05-09`
+- Decision: Add Night Level as an in-run escalation value driven by Bloom Burst count, with gentle passive drain, shadow speed, and shadow count scaling.
+- Reason: Runs need a clearer sense of progress and danger without introducing permanent upgrades, currencies, maps, menus, or new enemy types.
+- Alternatives considered: Permanent leveling, score multipliers, survival-time scoring, multiple levels, new hazards, leaving run difficulty flat.
+
+### Infinite Night Pacing
+
+- Date: `2026-05-09`
+- Decision: Keep Night Level infinite, slow progression to three Bloom Bursts per Night, and make Bloom Burst use a short cooldown plus a glow cost.
+- Reason: Reaching deeper Nights should feel earned, and Bloom Burst should create a charge-up and release rhythm rather than an automatic repeated bonus.
+- Alternatives considered: Capping Night Level, keeping two Bloom Bursts per Night, removing Bloom Burst score, adding score multipliers, adding permanent progression.
+
+### Moon Shield Temporary Powerup
+
+- Date: `2026-05-09`
+- Decision: Add one rare Moon Shield pickup that grants a short shield against shadow damage only.
+- Reason: A temporary shield creates a lucky risk/reward moment and a brief safety window without adding an inventory, upgrade tree, shop, multiple powerups, or permanent progression.
+- Alternatives considered: Multiple powerups, permanent shield upgrades, invincibility against all drain, speed boost, magnet pickup, leaving runs without rare pickup moments.
+
+### Code-Drawn Rooftop Atmosphere
+
+- Date: `2026-05-09`
+- Decision: Add a low-contrast, code-drawn rooftop background with a night sky gradient, soft moon, distant skyline, balcony railing, and subtle plant silhouettes.
+- Reason: The scene should feel more like a moonlit rooftop balcony while keeping the firefly, orbs, shadows, powerups, and HUD easy to read.
+- Alternatives considered: Imported background art, detailed skyline assets, animated scenery, brighter window lights, leaving the background plain.
+
+### Transparent Background Asset Layers
+
+- Date: `2026-05-09`
+- Decision: Use real transparent PNG layers for the skyline, railing, and plant silhouettes, while keeping the sky, stars, and moon code-drawn.
+- Reason: Layered assets make the rooftop scene feel more intentional without replacing the whole background or making gameplay readability depend on one full-screen image.
+- Alternatives considered: Keeping all background details code-drawn, importing one full background image, animating scenery, adding a larger asset pipeline.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`
