@@ -86,7 +86,11 @@ export class CanvasRenderer {
 
   render(snapshot: RenderSnapshot): void {
     this.clear();
-    this.drawMoonlitGarden();
+    this.drawMoonlitGarden(
+      snapshot.previousMoonPhaseIndex,
+      snapshot.moonPhaseIndex,
+      snapshot.moonPhaseTransitionProgress,
+    );
 
     for (const hazard of snapshot.shadowHazards) {
       this.drawShadowHazard(hazard.x, hazard.y, hazard.radius);
@@ -111,7 +115,13 @@ export class CanvasRenderer {
     }
 
     for (const orb of snapshot.moonlightOrbs) {
-      this.drawMoonlightOrb(orb.x, orb.y, orb.radius, orb.pulseScale);
+      this.drawMoonlightOrb(
+        orb.x,
+        orb.y,
+        orb.radius,
+        orb.pulseScale,
+        snapshot.isMoonRainActive,
+      );
     }
 
     if (snapshot.firefly) {
@@ -174,12 +184,16 @@ export class CanvasRenderer {
     return asset;
   }
 
-  private drawMoonlitGarden(): void {
+  private drawMoonlitGarden(
+    previousMoonPhaseIndex: number,
+    moonPhaseIndex: number,
+    moonPhaseTransitionProgress: number,
+  ): void {
     const { width, height } = this.size;
 
     this.drawSkyBackground(width, height);
     this.drawStars(width, height);
-    this.drawMoon(width, height);
+    this.drawMoon(width, height, previousMoonPhaseIndex, moonPhaseIndex, moonPhaseTransitionProgress);
     this.drawSkylineAsset(width, height);
     this.drawRailingAsset(width, height);
     this.drawPlantAssets(width, height);
@@ -206,15 +220,25 @@ export class CanvasRenderer {
     ctx.fillRect(0, height * 0.46, width, height * 0.46);
   }
 
-  private drawMoon(width: number, height: number): void {
+  private drawMoon(
+    width: number,
+    height: number,
+    previousMoonPhaseIndex: number,
+    moonPhaseIndex: number,
+    moonPhaseTransitionProgress: number,
+  ): void {
     const ctx = this.context;
     const moonRadius = Math.max(32, Math.min(width, height) * 0.075);
     const moonX = width * 0.78;
     const moonY = height * 0.18;
+    const easedProgress = this.easeMoonPhaseTransition(moonPhaseTransitionProgress);
+    const previousIllumination = this.getMoonPhaseIllumination(previousMoonPhaseIndex);
+    const currentIllumination = this.getMoonPhaseIllumination(moonPhaseIndex);
+    const illumination = previousIllumination + (currentIllumination - previousIllumination) * easedProgress;
 
     const moonGlow = ctx.createRadialGradient(moonX, moonY, 0, moonX, moonY, moonRadius * 3.1);
-    moonGlow.addColorStop(0, 'rgba(248, 232, 173, 0.34)');
-    moonGlow.addColorStop(0.42, 'rgba(185, 211, 255, 0.13)');
+    moonGlow.addColorStop(0, `rgba(248, 232, 173, ${0.1 + illumination * 0.24})`);
+    moonGlow.addColorStop(0.42, `rgba(185, 211, 255, ${0.06 + illumination * 0.08})`);
     moonGlow.addColorStop(1, 'rgba(187, 214, 255, 0)');
 
     ctx.fillStyle = moonGlow;
@@ -222,21 +246,113 @@ export class CanvasRenderer {
     ctx.arc(moonX, moonY, moonRadius * 3.1, 0, Math.PI * 2);
     ctx.fill();
 
+    ctx.fillStyle = 'rgba(12, 19, 37, 0.78)';
+    ctx.beginPath();
+    ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    if (previousMoonPhaseIndex !== moonPhaseIndex && easedProgress < 1) {
+      this.drawMoonPhase(moonX, moonY, moonRadius, previousMoonPhaseIndex, 1 - easedProgress);
+      this.drawMoonPhase(moonX, moonY, moonRadius, moonPhaseIndex, easedProgress);
+      return;
+    }
+
+    this.drawMoonPhase(moonX, moonY, moonRadius, moonPhaseIndex, 1);
+  }
+
+  private getMoonPhaseIllumination(moonPhaseIndex: number): number {
+    const phaseIllumination = [1, 0.78, 0.5, 0.28, 0.08, 0.28, 0.5, 0.78];
+
+    return phaseIllumination[moonPhaseIndex] ?? 1;
+  }
+
+  private drawMoonPhase(
+    x: number,
+    y: number,
+    radius: number,
+    moonPhaseIndex: number,
+    alpha: number,
+  ): void {
+    const ctx = this.context;
     const moonBody = ctx.createRadialGradient(
-      moonX - moonRadius * 0.28,
-      moonY - moonRadius * 0.3,
-      moonRadius * 0.1,
-      moonX,
-      moonY,
-      moonRadius,
+      x - radius * 0.28,
+      y - radius * 0.3,
+      radius * 0.1,
+      x,
+      y,
+      radius,
     );
     moonBody.addColorStop(0, '#fff4bf');
     moonBody.addColorStop(1, '#ead99d');
 
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
+    ctx.beginPath();
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
+    ctx.clip();
+
+    if (moonPhaseIndex === 4) {
+      const newMoonGlow = ctx.createRadialGradient(x, y, radius * 0.45, x, y, radius);
+      newMoonGlow.addColorStop(0, 'rgba(255, 239, 176, 0)');
+      newMoonGlow.addColorStop(0.86, 'rgba(255, 239, 176, 0.04)');
+      newMoonGlow.addColorStop(1, 'rgba(255, 239, 176, 0.18)');
+
+      ctx.fillStyle = newMoonGlow;
+      ctx.fillRect(x - radius, y - radius, radius * 2, radius * 2);
+      ctx.restore();
+      return;
+    }
+
     ctx.fillStyle = moonBody;
     ctx.beginPath();
-    ctx.arc(moonX, moonY, moonRadius, 0, Math.PI * 2);
+    ctx.arc(x, y, radius, 0, Math.PI * 2);
     ctx.fill();
+
+    if (moonPhaseIndex === 2) {
+      this.drawMoonDarkHalf(x, y - radius, radius, radius * 2);
+    } else if (moonPhaseIndex === 6) {
+      this.drawMoonDarkHalf(x - radius, y - radius, radius, radius * 2);
+    } else if (moonPhaseIndex !== 0) {
+      const maskOffset = this.getMoonPhaseMaskOffset(radius, moonPhaseIndex);
+      const darkMask = ctx.createRadialGradient(x + maskOffset, y, radius * 0.08, x + maskOffset, y, radius);
+      darkMask.addColorStop(0, 'rgba(9, 16, 32, 0.98)');
+      darkMask.addColorStop(1, 'rgba(9, 16, 32, 0.9)');
+
+      ctx.fillStyle = darkMask;
+      ctx.beginPath();
+      ctx.arc(x + maskOffset, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  private drawMoonDarkHalf(x: number, y: number, width: number, height: number): void {
+    const ctx = this.context;
+
+    ctx.fillStyle = 'rgba(9, 16, 32, 0.95)';
+    ctx.fillRect(x, y, width, height);
+  }
+
+  private getMoonPhaseMaskOffset(radius: number, moonPhaseIndex: number): number {
+    switch (moonPhaseIndex) {
+      case 1:
+        return radius * 1.18;
+      case 3:
+        return radius * 0.48;
+      case 5:
+        return -radius * 0.48;
+      case 7:
+        return -radius * 1.18;
+      default:
+        return 0;
+    }
+  }
+
+  private easeMoonPhaseTransition(progress: number): number {
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+
+    return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
   }
 
   private drawStars(width: number, height: number): void {
@@ -404,21 +520,28 @@ export class CanvasRenderer {
     ctx.fill();
   }
 
-  private drawMoonlightOrb(x: number, y: number, radius: number, pulseScale: number): void {
+  private drawMoonlightOrb(
+    x: number,
+    y: number,
+    radius: number,
+    pulseScale: number,
+    isMoonRainActive: boolean,
+  ): void {
     const ctx = this.context;
     const pulsedRadius = radius * pulseScale;
+    const glowRadius = pulsedRadius * (isMoonRainActive ? 4.4 : 3.8);
 
-    const glow = ctx.createRadialGradient(x, y, 0, x, y, pulsedRadius * 3.8);
-    glow.addColorStop(0, 'rgba(225, 244, 255, 0.82)');
-    glow.addColorStop(0.3, 'rgba(118, 194, 255, 0.3)');
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+    glow.addColorStop(0, isMoonRainActive ? 'rgba(248, 246, 226, 0.9)' : 'rgba(225, 244, 255, 0.82)');
+    glow.addColorStop(0.3, isMoonRainActive ? 'rgba(183, 217, 255, 0.36)' : 'rgba(118, 194, 255, 0.3)');
     glow.addColorStop(1, 'rgba(118, 194, 255, 0)');
 
     ctx.fillStyle = glow;
     ctx.beginPath();
-    ctx.arc(x, y, pulsedRadius * 3.8, 0, Math.PI * 2);
+    ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = '#dff7ff';
+    ctx.fillStyle = isMoonRainActive ? '#f8fbff' : '#dff7ff';
     ctx.beginPath();
     ctx.arc(x, y, pulsedRadius, 0, Math.PI * 2);
     ctx.fill();
@@ -625,17 +748,93 @@ export class CanvasRenderer {
       return;
     }
 
-    this.drawHudText(`Score: ${snapshot.score}`, 24, 28, 'left');
-    this.drawHudText(`Time: ${snapshot.elapsedTime.toFixed(1)}s`, 24, 58, 'left');
-    this.drawHudText(`Night: ${snapshot.nightLevel}`, 24, 88, 'left');
-    this.drawGlowMeter(snapshot.glow, snapshot.maxGlow, 24, 118);
-    if (snapshot.moonShieldRemaining > 0) {
-      this.drawHudText(`Moon Shield: ${snapshot.moonShieldRemaining.toFixed(1)}s`, 24, 148, 'left');
-    }
-    this.drawLevelUpMessage(snapshot.nightLevel, snapshot.levelUpMessageProgress, centerX, height);
+    this.drawPlayingHud(snapshot);
+    this.drawLevelUpMessage(
+      snapshot.nightLevel,
+      snapshot.moonPhaseName,
+      snapshot.moonPhaseMessageProgress,
+      centerX,
+      height,
+    );
+    this.drawMoonRainMessage(
+      snapshot.moonRainMessage,
+      snapshot.moonRainMessageProgress,
+      centerX,
+      height,
+    );
   }
 
-  private drawLevelUpMessage(nightLevel: number, progress: number, x: number, height: number): void {
+  private drawPlayingHud(snapshot: RenderSnapshot): void {
+    const ctx = this.context;
+    const isNarrow = this.size.width < 420;
+    const left = isNarrow ? 12 : 18;
+    const top = isNarrow ? 12 : 16;
+    const width = Math.min(isNarrow ? 214 : 226, this.size.width - left * 2);
+    const hasShield = snapshot.moonShieldRemaining > 0;
+    const rowGap = isNarrow ? 24 : 26;
+    const panelHeight = hasShield ? (isNarrow ? 158 : 170) : (isNarrow ? 134 : 144);
+    const paddingX = isNarrow ? 14 : 16;
+    const firstRowY = top + (isNarrow ? 24 : 26);
+
+    const panelGradient = ctx.createLinearGradient(0, top, 0, top + panelHeight);
+    panelGradient.addColorStop(0, 'rgba(5, 9, 20, 0.78)');
+    panelGradient.addColorStop(1, 'rgba(4, 7, 16, 0.58)');
+
+    this.drawPanelRect(
+      left,
+      top,
+      width,
+      panelHeight,
+      8,
+      panelGradient,
+      'rgba(255, 236, 174, 0.16)',
+      10,
+    );
+
+    const contentLeft = left + paddingX;
+    const contentWidth = width - paddingX * 2;
+
+    this.drawHudMetric('Score', snapshot.score.toString(), contentLeft, firstRowY, contentWidth);
+    this.drawHudMetric('Time', `${snapshot.elapsedTime.toFixed(1)}s`, contentLeft, firstRowY + rowGap, contentWidth);
+    this.drawHudMetric('Night', snapshot.nightLevel.toString(), contentLeft, firstRowY + rowGap * 2, contentWidth);
+    this.drawGlowMeter(snapshot.glow, snapshot.maxGlow, contentLeft, firstRowY + rowGap * 3 + 2, contentWidth);
+
+    if (hasShield) {
+      ctx.save();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(205, 255, 255, 0.86)';
+      ctx.font = `600 ${isNarrow ? 12 : 13}px Inter, system-ui, sans-serif`;
+      ctx.fillText(`Moon Shield: ${snapshot.moonShieldRemaining.toFixed(1)}s`, contentLeft, firstRowY + rowGap * 4 + 8);
+      ctx.restore();
+    }
+  }
+
+  private drawHudMetric(label: string, value: string, x: number, y: number, width: number): void {
+    const ctx = this.context;
+    const isNarrow = this.size.width < 420;
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.72)';
+    ctx.font = `500 ${isNarrow ? 13 : 14}px Inter, system-ui, sans-serif`;
+    ctx.fillText(label, x, y);
+
+    ctx.textAlign = 'right';
+    ctx.fillStyle = '#fff0b8';
+    ctx.font = `700 ${isNarrow ? 14 : 15}px Inter, system-ui, sans-serif`;
+    ctx.fillText(value, x + width, y);
+    ctx.restore();
+  }
+
+  private drawLevelUpMessage(
+    nightLevel: number,
+    moonPhaseName: string,
+    progress: number,
+    x: number,
+    height: number,
+  ): void {
     if (progress <= 0) {
       return;
     }
@@ -648,27 +847,71 @@ export class CanvasRenderer {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = `rgba(255, 238, 174, ${0.9 * alpha})`;
-    this.setFittedFont('700', 22, 16, `Night Level ${nightLevel}`);
-    ctx.fillText(`Night Level ${nightLevel}`, x, height * 0.24 - rise);
+    this.setFittedFont('700', 22, 16, `Night ${nightLevel}`);
+    ctx.fillText(`Night ${nightLevel}`, x, height * 0.24 - rise);
     ctx.fillStyle = `rgba(248, 240, 201, ${0.68 * alpha})`;
-    this.setFittedFont('400', 14, 12, 'The night deepens...');
-    ctx.fillText('The night deepens...', x, height * 0.24 + 24 - rise);
+    this.setFittedFont('500', 15, 12, moonPhaseName);
+    ctx.fillText(moonPhaseName, x, height * 0.24 + 24 - rise);
+    ctx.restore();
+  }
+
+  private drawMoonRainMessage(
+    message: string | null,
+    progress: number,
+    x: number,
+    height: number,
+  ): void {
+    if (!message || progress <= 0) {
+      return;
+    }
+
+    const ctx = this.context;
+    const alpha = Math.min(1, progress);
+    const rise = (1 - progress) * 10;
+    const title = message === 'start' ? 'Full Moon Trial' : 'Moon Rain fades';
+    const subtitle = message === 'start' ? 'Moon Rain begins' : 'The moonlight settles';
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(255, 242, 190, ${0.9 * alpha})`;
+    this.setFittedFont('700', 20, 15, title);
+    ctx.fillText(title, x, height * 0.34 - rise);
+    ctx.fillStyle = `rgba(210, 235, 255, ${0.72 * alpha})`;
+    this.setFittedFont('500', 14, 12, subtitle);
+    ctx.fillText(subtitle, x, height * 0.34 + 22 - rise);
     ctx.restore();
   }
 
   private drawGameOverSummary(snapshot: RenderSnapshot, x: number, centerY: number): void {
-    const panelWidth = Math.max(1, Math.min(430, this.size.width - 32));
-    const panelHeight = Math.max(300, Math.min(356, this.size.height - 32));
+    const panelWidth = Math.max(1, Math.min(480, this.size.width - 28));
+    const panelHeight = Math.max(292, Math.min(this.size.height - 28, this.size.height < 520 ? 320 : 390));
+    const top = centerY - panelHeight / 2;
+    const bottom = top + panelHeight;
+    const compact = panelHeight < 350;
+    const paddingX = this.size.width < 420 ? 24 : 34;
+    const contentWidth = panelWidth - paddingX * 2;
+    const titleY = top + (compact ? 36 : 46);
+    const summaryY = titleY + (compact ? 30 : 38);
+    const scoreY = summaryY + (compact ? 42 : 50);
+    const statsTop = scoreY + (compact ? 38 : 52);
+    const statRowGap = compact ? 46 : 56;
+    const columnOffset = panelWidth * 0.23;
+    const columnWidth = Math.max(100, (contentWidth - 18) / 2);
+    const fullMoonStatY = bottom - (compact ? 58 : 70);
 
     this.drawSoftPanel(x, centerY, panelWidth, panelHeight);
-    this.drawTitle('Glow Faded', x, centerY - 132);
-    this.drawPrimaryStat(`Final Score: ${snapshot.score}`, x, centerY - 80);
-    this.drawHint(`Best Score: ${snapshot.bestScore}`, x, centerY - 38);
-    this.drawHint(`Time Survived: ${snapshot.elapsedTime.toFixed(1)}s`, x, centerY - 6);
-    this.drawHint(`Moonlight Orbs Collected: ${snapshot.orbsCollected}`, x, centerY + 26);
-    this.drawHint(`Bloom Bursts: ${snapshot.bloomBursts}`, x, centerY + 58);
-    this.drawHint(`Deepest Night: ${snapshot.highestNightLevel}`, x, centerY + 90);
-    this.drawSubtitle('Click / Tap to Try Again', x, centerY + 134);
+    this.drawTitle('Glow Faded', x, titleY, contentWidth);
+    this.drawHint(`You kept the light alive for ${snapshot.elapsedTime.toFixed(1)}s.`, x, summaryY, contentWidth);
+    this.drawPrimaryStat(`Score: ${snapshot.score}`, x, scoreY, contentWidth);
+
+    this.drawGameOverStat('Best', snapshot.bestScore.toString(), x - columnOffset, statsTop, columnWidth);
+    this.drawGameOverStat('Deepest Night', snapshot.highestNightLevel.toString(), x + columnOffset, statsTop, columnWidth);
+    this.drawGameOverStat('Moonlight Orbs', snapshot.orbsCollected.toString(), x - columnOffset, statsTop + statRowGap, columnWidth);
+    this.drawGameOverStat('Blooms', snapshot.bloomBursts.toString(), x + columnOffset, statsTop + statRowGap, columnWidth);
+    this.drawHint(`Full Moons Survived: ${snapshot.fullMoonTrialsSurvived}`, x, fullMoonStatY, contentWidth);
+
+    this.drawSubtitle('Click / Tap to fly again', x, bottom - (compact ? 28 : 36), contentWidth);
   }
 
   private drawSoftPanel(x: number, y: number, width: number, height: number): void {
@@ -676,13 +919,43 @@ export class CanvasRenderer {
     const left = x - width / 2;
     const top = y - height / 2;
     const radius = Math.min(8, width / 2, height / 2);
+    const panelGradient = ctx.createLinearGradient(0, top, 0, top + height);
+    panelGradient.addColorStop(0, 'rgba(4, 7, 17, 0.82)');
+    panelGradient.addColorStop(1, 'rgba(6, 11, 24, 0.68)');
+
+    this.drawPanelRect(
+      left,
+      top,
+      width,
+      height,
+      radius,
+      panelGradient,
+      'rgba(249, 237, 197, 0.16)',
+      16,
+    );
+  }
+
+  private drawPanelRect(
+    x: number,
+    y: number,
+    width: number,
+    height: number,
+    radius: number,
+    fillStyle: string | CanvasGradient,
+    strokeStyle: string,
+    shadowBlur: number,
+  ): void {
+    const ctx = this.context;
 
     ctx.save();
-    ctx.fillStyle = 'rgba(4, 7, 17, 0.62)';
-    ctx.strokeStyle = 'rgba(249, 237, 197, 0.14)';
+    ctx.shadowColor = 'rgba(255, 222, 148, 0.08)';
+    ctx.shadowBlur = shadowBlur;
+    ctx.fillStyle = fillStyle;
+    ctx.strokeStyle = strokeStyle;
     ctx.lineWidth = 1;
-    this.traceRoundedRect(left, top, width, height, radius);
+    this.traceRoundedRect(x, y, width, height, radius);
     ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.stroke();
     ctx.restore();
   }
@@ -705,66 +978,101 @@ export class CanvasRenderer {
     ctx.closePath();
   }
 
-  private drawGlowMeter(glow: number, maxGlow: number, x: number, y: number): void {
+  private drawGlowMeter(glow: number, maxGlow: number, x: number, y: number, width: number): void {
     const ctx = this.context;
-    const isNarrow = this.size.width < 380;
-    const width = isNarrow ? 108 : 132;
+    const isNarrow = this.size.width < 420;
     const height = isNarrow ? 10 : 12;
     const labelGap = isNarrow ? 48 : 54;
+    const barWidth = Math.max(80, width - labelGap);
+    const barLeft = x + labelGap;
+    const barTop = y - height / 2;
+    const radius = height / 2;
     const fillRatio = Math.max(0, Math.min(1, glow / maxGlow));
-    const fillWidth = width * fillRatio;
-    const fillColor = fillRatio < 0.28 ? '#f0a06a' : '#f7d774';
+    const fillWidth = barWidth * fillRatio;
+    const isLowGlow = fillRatio < 0.28;
+    const fillGradient = ctx.createLinearGradient(barLeft, 0, barLeft + barWidth, 0);
+    fillGradient.addColorStop(0, isLowGlow ? '#df836a' : '#ffe49a');
+    fillGradient.addColorStop(1, isLowGlow ? '#f2b46f' : '#f4c95d');
 
+    ctx.save();
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#f9edc5';
-    ctx.font = `500 ${isNarrow ? 14 : 16}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.72)';
+    ctx.font = `500 ${isNarrow ? 13 : 14}px Inter, system-ui, sans-serif`;
     ctx.fillText('Glow', x, y);
 
-    ctx.fillStyle = 'rgba(249, 237, 197, 0.16)';
-    ctx.fillRect(x + labelGap, y - height / 2, width, height);
+    ctx.fillStyle = 'rgba(249, 237, 197, 0.12)';
+    this.traceRoundedRect(barLeft, barTop, barWidth, height, radius);
+    ctx.fill();
 
-    ctx.fillStyle = fillColor;
-    ctx.fillRect(x + labelGap, y - height / 2, fillWidth, height);
+    if (fillWidth > 0.5) {
+      ctx.save();
+      ctx.shadowColor = isLowGlow ? 'rgba(240, 132, 94, 0.24)' : `rgba(255, 220, 112, ${0.22 + fillRatio * 0.18})`;
+      ctx.shadowBlur = isLowGlow ? 5 : 9;
+      ctx.fillStyle = fillGradient;
+      this.traceRoundedRect(barLeft, barTop, fillWidth, height, Math.min(radius, fillWidth / 2));
+      ctx.fill();
+      ctx.restore();
+    }
 
-    ctx.strokeStyle = 'rgba(249, 237, 197, 0.42)';
+    ctx.strokeStyle = fillRatio > 0.92 ? 'rgba(255, 238, 166, 0.58)' : 'rgba(249, 237, 197, 0.34)';
     ctx.lineWidth = 1;
-    ctx.strokeRect(x + labelGap, y - height / 2, width, height);
-
-    ctx.textAlign = 'center';
+    this.traceRoundedRect(barLeft, barTop, barWidth, height, radius);
+    ctx.stroke();
+    ctx.restore();
   }
 
-  private drawTitle(text: string, x: number, y: number): void {
+  private drawTitle(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {
     const ctx = this.context;
-    this.setFittedFont('700', 36, 26, text);
+    ctx.fillStyle = '#fff0b8';
+    this.setFittedFont('700', 36, 26, text, maxWidth);
     ctx.fillText(text, x, y);
+    ctx.fillStyle = '#f9edc5';
   }
 
-  private drawSubtitle(text: string, x: number, y: number): void {
+  private drawSubtitle(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {
     const ctx = this.context;
-    this.setFittedFont('500', 20, 16, text);
+    ctx.fillStyle = '#fff0b8';
+    this.setFittedFont('600', 20, 16, text, maxWidth);
     ctx.fillText(text, x, y);
+    ctx.fillStyle = '#f9edc5';
   }
 
-  private drawPrimaryStat(text: string, x: number, y: number): void {
+  private drawPrimaryStat(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {
     const ctx = this.context;
     ctx.fillStyle = '#fff2b8';
-    this.setFittedFont('700', 24, 18, text);
+    this.setFittedFont('700', 28, 20, text, maxWidth);
     ctx.fillText(text, x, y);
     ctx.fillStyle = '#f9edc5';
   }
 
-  private drawHint(text: string, x: number, y: number): void {
+  private drawHint(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {
     const ctx = this.context;
     ctx.fillStyle = 'rgba(248, 240, 201, 0.72)';
-    this.setFittedFont('400', 14, 12, text);
+    this.setFittedFont('400', 14, 12, text, maxWidth);
     ctx.fillText(text, x, y);
     ctx.fillStyle = '#f9edc5';
   }
 
-  private setFittedFont(weight: string, baseSize: number, minSize: number, text: string): void {
+  private drawGameOverStat(label: string, value: string, x: number, y: number, maxWidth: number): void {
     const ctx = this.context;
-    const maxTextWidth = Math.max(140, this.size.width - 32);
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.62)';
+    this.setFittedFont('500', 12, 10, label, maxWidth);
+    ctx.fillText(label, x, y);
+
+    ctx.fillStyle = '#fff0b8';
+    this.setFittedFont('700', 18, 15, value, maxWidth);
+    ctx.fillText(value, x, y + 20);
+    ctx.restore();
+  }
+
+  private setFittedFont(weight: string, baseSize: number, minSize: number, text: string, maxWidth = this.size.width - 32): void {
+    const ctx = this.context;
+    const maxTextWidth = Math.max(80, maxWidth);
     let fontSize = baseSize;
 
     ctx.font = `${weight} ${fontSize}px Inter, system-ui, sans-serif`;
@@ -773,15 +1081,5 @@ export class CanvasRenderer {
       fontSize -= 1;
       ctx.font = `${weight} ${fontSize}px Inter, system-ui, sans-serif`;
     }
-  }
-
-  private drawHudText(text: string, x: number, y: number, align: CanvasTextAlign): void {
-    const ctx = this.context;
-    ctx.textAlign = align;
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#f9edc5';
-    ctx.font = `500 ${this.size.width < 380 ? 14 : 16}px Inter, system-ui, sans-serif`;
-    ctx.fillText(text, x, y);
-    ctx.textAlign = 'center';
   }
 }

@@ -160,6 +160,41 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: The railing and plants should feel more physical and intentional, especially on mobile, without competing with gameplay elements.
 - Alternatives considered: Brightening all background assets, changing layout, replacing assets, leaving the railing and plants very faint.
 
+### HUD and Game Over UI Polish
+
+- Date: `2026-05-10`
+- Decision: Polish the HUD and game over screen with code-drawn panels, warmer copy, clearer stat hierarchy, and a more magical glow meter.
+- Reason: The game should feel less prototype-like while preserving the existing gameplay loop, scoring, powerups, background assets, and restart flow.
+- Alternatives considered: New UI image assets, a full menu redesign, additional stats, settings screens, leaving the HUD and game over screen plain.
+
+### Moon Phase Cycle
+
+- Date: `2026-05-10`
+- Decision: Derive a repeating visual moon phase cycle from infinite Night Level, with phase names shown during Night-change feedback.
+- Reason: Moon phases add atmospheric run identity and progression without changing gameplay or introducing Full Moon events yet.
+- Alternatives considered: Fixed moon art, random moon phases, gameplay-affecting Full Moon challenges, permanent progression, adding moon phase HUD clutter.
+
+### Moon Phase Polish
+
+- Date: `2026-05-10`
+- Decision: Start the moon cycle at Full Moon, remove the hard moon outline, and crossfade phase visuals over a short transition.
+- Reason: The moon should feel softer, more natural, and more beautiful while remaining a visual progression layer only.
+- Alternatives considered: Keeping New Moon as Night 1, instant phase swaps, hard phase outlines, adding Full Moon gameplay events.
+
+### Full Moon Trial - Moon Rain
+
+- Date: `2026-05-10`
+- Decision: Trigger a short Moon Rain event on later Full Moons, adding extra moonlight orbs and slightly faster shadows for limited-time pressure.
+- Reason: Later Full Moons should feel special and rewarding without adding ads, upgrades, new enemies, new powerups, score multipliers, or a separate game mode.
+- Alternatives considered: Triggering Moon Rain on Night 1, adding Full Moon score multipliers, spawning extra shadows, creating a new orb type, leaving Full Moons visual-only.
+
+### Essential Sound Effects
+
+- Date: `2026-05-13`
+- Decision: Add lightweight sound feedback through a small audio manager with per-sound volume balancing, cooldowns for frequent cues, and browser audio unlock after player interaction.
+- Reason: Audio should make collecting light, taking shadow damage, Bloom Bursts, Moon Rain, Moon Shield, run start, and game over feel more alive without changing gameplay or adding settings/menu scope.
+- Alternatives considered: No sound, a larger audio engine, music systems, a settings menu, uncapped repeated sound playback.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`

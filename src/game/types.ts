@@ -1,5 +1,15 @@
 export type GameState = 'start' | 'playing' | 'gameOver';
 
+export type MoonPhaseName =
+  | 'New Moon'
+  | 'Waxing Crescent'
+  | 'First Quarter'
+  | 'Waxing Gibbous'
+  | 'Full Moon'
+  | 'Waning Gibbous'
+  | 'Last Quarter'
+  | 'Waning Crescent';
+
 export type CanvasSize = {
   width: number;
   height: number;
@@ -49,6 +59,8 @@ export type MoonShieldPowerupSnapshot = {
   pulseScale: number;
 };
 
+export type MoonRainMessage = 'start' | 'end' | null;
+
 export type RenderSnapshot = {
   state: GameState;
   elapsedTime: number;
@@ -56,9 +68,19 @@ export type RenderSnapshot = {
   bestScore: number;
   orbsCollected: number;
   bloomBursts: number;
+  fullMoonTrialsSurvived: number;
   nightLevel: number;
   highestNightLevel: number;
   levelUpMessageProgress: number;
+  previousMoonPhaseIndex: number;
+  moonPhaseIndex: number;
+  moonPhaseName: MoonPhaseName;
+  moonPhaseTransitionProgress: number;
+  moonPhaseMessageProgress: number;
+  isMoonRainActive: boolean;
+  moonRainProgress: number;
+  moonRainMessage: MoonRainMessage;
+  moonRainMessageProgress: number;
   glow: number;
   maxGlow: number;
   collectPulse: number;

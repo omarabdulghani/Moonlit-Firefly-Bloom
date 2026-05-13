@@ -236,3 +236,63 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [ ] Does the player want to retry?
 - [ ] Does best score persist after refresh?
 - [ ] Is the MVP still small?
+
+## Phase 9.1: HUD and Game Over UI Polish
+
+- [x] Keep the start screen structure clear and unchanged.
+- [x] Group gameplay HUD stats in a subtle translucent panel.
+- [x] Keep HUD labels clear: Score, Time, Night, and Glow.
+- [x] Make the glow meter feel warmer and more magical.
+- [x] Keep Moon Shield status visible when active.
+- [x] Rewrite game over language with a warmer run summary.
+- [x] Group game over stats more cleanly.
+- [x] Update retry copy to `Click / Tap to fly again`.
+- [x] Preserve gameplay, tuning, assets, input, and restart behavior.
+
+## Phase 10: Moon Phase Cycle
+
+- [x] Add a repeating moon phase cycle derived from Night Level.
+- [x] Track moon phase index and name in the render snapshot.
+- [x] Render the code-drawn moon differently for each phase.
+- [x] Keep New Moon subtle and Full Moon bright but readable.
+- [x] Show the current moon phase name during Night-change feedback.
+- [x] Keep HUD and game over stats uncluttered.
+- [x] Preserve gameplay, tuning, scoring, powerups, input, and restart behavior.
+- [x] Avoid Full Moon events, ads, monetization, new enemies, new powerups, sound, and menus.
+
+## Phase 10.1: Moon Phase Polish
+
+- [x] Rotate the moon phase cycle so Night 1 starts at Full Moon.
+- [x] Keep the eight-phase cycle repeating infinitely.
+- [x] Remove the hard circular moon outline.
+- [x] Add a short eased crossfade between moon phase shapes.
+- [x] Keep phase-change messages clean and uncluttered.
+- [x] Preserve gameplay, tuning, scoring, powerups, input, HUD content, and restart behavior.
+- [x] Avoid Full Moon events, ads, monetization, new enemies, new powerups, sound, and menus.
+
+## Phase 10.2: Full Moon Trial - Moon Rain
+
+- [x] Trigger Moon Rain only on later Full Moon phase changes.
+- [x] Keep the Night 1 Full Moon calm and event-free.
+- [x] Add a limited Moon Rain event timer.
+- [x] Increase active moonlight orb count by three during Moon Rain.
+- [x] Return orb count to normal when Moon Rain fades.
+- [x] Slightly increase shadow speed during Moon Rain.
+- [x] Show short Moon Rain start and end messages.
+- [x] Track Full Moons survived during the current run.
+- [x] Show Full Moons survived on the game over summary.
+- [x] Preserve normal scoring, Bloom Burst, Moon Shield, Night Level, input, and restart behavior.
+- [x] Avoid ads, upgrades, monetization, new enemy types, new powerups, sound, menus, and particle systems.
+
+## Phase 11: Essential Sound Effects
+
+- [x] Copy WAV files into a Vite public sound path with clean runtime names.
+- [x] Add a small audio manager with per-sound volumes and cooldowns.
+- [x] Unlock audio after player interaction without autoplaying before input.
+- [x] Play start/retry, orb collect, shadow damage, Bloom Burst, low glow, and game over sounds.
+- [x] Play moon phase sounds only on phase changes after the run starts.
+- [x] Play Moon Rain begin/end sounds and loop quiet ambience while Moon Rain is active.
+- [x] Play Moon Shield feedback on pickup/activation.
+- [x] Handle missing or blocked audio without breaking gameplay.
+- [x] Preserve gameplay, scoring, tuning, visuals, input, and restart behavior.
+- [x] Avoid new menus, settings, mechanics, upgrades, achievements, monetization, PWA, Capacitor, and app-store files.
