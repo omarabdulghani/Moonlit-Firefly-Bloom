@@ -1,4 +1,4 @@
-import type { CanvasSize, RenderSnapshot } from '../game/types';
+import type { CanvasSize, HudMessageKind, PowerupType, RenderSnapshot } from '../game/types';
 
 type BackgroundAssetName = 'skyline' | 'railing' | 'plantLeft' | 'plantRight';
 
@@ -114,12 +114,24 @@ export class CanvasRenderer {
       );
     }
 
+    for (const powerup of snapshot.powerups) {
+      this.drawSpecialPowerup(
+        powerup.type,
+        powerup.x,
+        powerup.y,
+        powerup.radius,
+        powerup.pulseScale,
+        powerup.fadeAlpha,
+      );
+    }
+
     for (const orb of snapshot.moonlightOrbs) {
       this.drawMoonlightOrb(
         orb.x,
         orb.y,
         orb.radius,
         orb.pulseScale,
+        orb.fadeAlpha,
         snapshot.isMoonRainActive,
       );
     }
@@ -525,6 +537,7 @@ export class CanvasRenderer {
     y: number,
     radius: number,
     pulseScale: number,
+    fadeAlpha: number,
     isMoonRainActive: boolean,
   ): void {
     const ctx = this.context;
@@ -536,6 +549,8 @@ export class CanvasRenderer {
     glow.addColorStop(0.3, isMoonRainActive ? 'rgba(183, 217, 255, 0.36)' : 'rgba(118, 194, 255, 0.3)');
     glow.addColorStop(1, 'rgba(118, 194, 255, 0)');
 
+    ctx.save();
+    ctx.globalAlpha = fadeAlpha;
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
@@ -550,6 +565,7 @@ export class CanvasRenderer {
     ctx.beginPath();
     ctx.arc(x - pulsedRadius * 0.24, y - pulsedRadius * 0.28, pulsedRadius * 0.26, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
   }
 
   private drawMoonShieldPowerup(x: number, y: number, radius: number, pulseScale: number): void {
@@ -572,14 +588,130 @@ export class CanvasRenderer {
     ctx.arc(x, y, pulsedRadius * 1.24, 0, Math.PI * 2);
     ctx.stroke();
 
-    ctx.fillStyle = 'rgba(191, 250, 255, 0.72)';
-    ctx.beginPath();
-    ctx.moveTo(x, y - pulsedRadius * 0.8);
-    ctx.quadraticCurveTo(x + pulsedRadius * 0.68, y - pulsedRadius * 0.4, x + pulsedRadius * 0.5, y + pulsedRadius * 0.34);
-    ctx.quadraticCurveTo(x + pulsedRadius * 0.24, y + pulsedRadius * 0.88, x, y + pulsedRadius);
-    ctx.quadraticCurveTo(x - pulsedRadius * 0.24, y + pulsedRadius * 0.88, x - pulsedRadius * 0.5, y + pulsedRadius * 0.34);
-    ctx.quadraticCurveTo(x - pulsedRadius * 0.68, y - pulsedRadius * 0.4, x, y - pulsedRadius * 0.8);
+    const shieldGradient = ctx.createLinearGradient(
+      x - pulsedRadius * 0.72,
+      y - pulsedRadius * 0.88,
+      x + pulsedRadius * 0.72,
+      y + pulsedRadius,
+    );
+    shieldGradient.addColorStop(0, 'rgba(224, 255, 255, 0.9)');
+    shieldGradient.addColorStop(0.48, 'rgba(107, 221, 245, 0.78)');
+    shieldGradient.addColorStop(1, 'rgba(48, 146, 222, 0.82)');
+
+    ctx.save();
+    this.traceMoonShieldIconPath(x, y, pulsedRadius);
+    ctx.fillStyle = shieldGradient;
     ctx.fill();
+
+    ctx.clip();
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.16)';
+    ctx.fillRect(x - pulsedRadius * 0.68, y - pulsedRadius * 0.72, pulsedRadius * 0.68, pulsedRadius * 1.42);
+    ctx.fillStyle = 'rgba(18, 92, 202, 0.18)';
+    ctx.fillRect(x, y - pulsedRadius * 0.72, pulsedRadius * 0.68, pulsedRadius * 1.42);
+    ctx.restore();
+
+    ctx.strokeStyle = 'rgba(227, 255, 255, 0.96)';
+    ctx.lineWidth = 1.8;
+    this.traceMoonShieldIconPath(x, y, pulsedRadius);
+    ctx.stroke();
+
+    ctx.strokeStyle = 'rgba(226, 255, 255, 0.48)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x, y - pulsedRadius * 0.62);
+    ctx.lineTo(x, y + pulsedRadius * 0.72);
+    ctx.stroke();
+  }
+
+  private traceMoonShieldIconPath(x: number, y: number, radius: number): void {
+    const ctx = this.context;
+
+    ctx.beginPath();
+    ctx.moveTo(x, y - radius * 0.88);
+    ctx.quadraticCurveTo(x + radius * 0.4, y - radius * 0.62, x + radius * 0.68, y - radius * 0.56);
+    ctx.quadraticCurveTo(x + radius * 0.66, y + radius * 0.38, x + radius * 0.34, y + radius * 0.72);
+    ctx.quadraticCurveTo(x + radius * 0.18, y + radius * 0.9, x, y + radius);
+    ctx.quadraticCurveTo(x - radius * 0.18, y + radius * 0.9, x - radius * 0.34, y + radius * 0.72);
+    ctx.quadraticCurveTo(x - radius * 0.66, y + radius * 0.38, x - radius * 0.68, y - radius * 0.56);
+    ctx.quadraticCurveTo(x - radius * 0.4, y - radius * 0.62, x, y - radius * 0.88);
+    ctx.closePath();
+  }
+
+  private drawSpecialPowerup(
+    type: PowerupType,
+    x: number,
+    y: number,
+    radius: number,
+    pulseScale: number,
+    fadeAlpha: number,
+  ): void {
+    const ctx = this.context;
+    const pulsedRadius = radius * pulseScale;
+    const isMoonDash = type === 'moonDash';
+    const glowInner = isMoonDash ? 'rgba(197, 255, 118, 0.9)' : 'rgba(255, 230, 132, 0.9)';
+    const glowMid = isMoonDash ? 'rgba(76, 245, 122, 0.38)' : 'rgba(255, 175, 68, 0.36)';
+    const glowOuter = isMoonDash ? 'rgba(76, 245, 122, 0)' : 'rgba(255, 175, 68, 0)';
+    const ringColor = isMoonDash ? 'rgba(217, 255, 171, 0.92)' : 'rgba(255, 238, 170, 0.92)';
+    const fillColor = isMoonDash ? 'rgba(144, 255, 86, 0.82)' : 'rgba(255, 203, 88, 0.82)';
+
+    ctx.save();
+    ctx.globalAlpha = fadeAlpha;
+
+    const glow = ctx.createRadialGradient(x, y, 0, x, y, pulsedRadius * 3.8);
+    glow.addColorStop(0, glowInner);
+    glow.addColorStop(0.38, glowMid);
+    glow.addColorStop(1, glowOuter);
+
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.arc(x, y, pulsedRadius * 3.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = ringColor;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(x, y, pulsedRadius * 1.18, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.fillStyle = fillColor;
+
+    if (isMoonDash) {
+      this.drawMoonDashIcon(x, y, pulsedRadius);
+    } else {
+      this.drawGlowSurgeIcon(x, y, pulsedRadius);
+    }
+
+    ctx.restore();
+  }
+
+  private drawMoonDashIcon(x: number, y: number, radius: number): void {
+    const ctx = this.context;
+
+    ctx.beginPath();
+    ctx.moveTo(x + radius * 0.06, y - radius * 0.86);
+    ctx.lineTo(x - radius * 0.48, y + radius * 0.04);
+    ctx.lineTo(x - radius * 0.04, y + radius * 0.04);
+    ctx.lineTo(x - radius * 0.22, y + radius * 0.86);
+    ctx.lineTo(x + radius * 0.52, y - radius * 0.14);
+    ctx.lineTo(x + radius * 0.08, y - radius * 0.14);
+    ctx.closePath();
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(235, 255, 205, 0.9)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
+
+  private drawGlowSurgeIcon(x: number, y: number, radius: number): void {
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.font = `900 ${Math.max(15, radius * 1.04)}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(255, 252, 219, 0.98)';
+    ctx.fillText('x2', x, y + radius * 0.04);
+    ctx.restore();
   }
 
   private drawBloomBurstRing(x: number, y: number, progress: number, radius: number): void {
@@ -770,9 +902,36 @@ export class CanvasRenderer {
     const left = isNarrow ? 12 : 18;
     const top = isNarrow ? 12 : 16;
     const width = Math.min(isNarrow ? 214 : 226, this.size.width - left * 2);
-    const hasShield = snapshot.moonShieldRemaining > 0;
+    const statusRows: Array<{ label: string; value?: string; color: string }> = [];
+
+    if (snapshot.moonShieldRemaining > 0) {
+      statusRows.push({
+        label: 'Moon Shield',
+        value: `${snapshot.moonShieldRemaining.toFixed(1)}s`,
+        color: this.getHudMessageColor('moonShield'),
+      });
+    }
+
+    if (snapshot.moonDashRemaining > 0) {
+      statusRows.push({
+        label: 'Moon Dash',
+        value: `${snapshot.moonDashRemaining.toFixed(1)}s`,
+        color: this.getHudMessageColor('moonDash'),
+      });
+    }
+
+    if (snapshot.temporaryHudMessage) {
+      statusRows.push({
+        label: snapshot.temporaryHudMessage.text,
+        color: this.getHudMessageColor(
+          snapshot.temporaryHudMessage.kind,
+          snapshot.temporaryHudMessage.progress,
+        ),
+      });
+    }
+
     const rowGap = isNarrow ? 24 : 26;
-    const panelHeight = hasShield ? (isNarrow ? 158 : 170) : (isNarrow ? 134 : 144);
+    const panelHeight = (isNarrow ? 134 : 144) + statusRows.length * (isNarrow ? 22 : 24);
     const paddingX = isNarrow ? 14 : 16;
     const firstRowY = top + (isNarrow ? 24 : 26);
 
@@ -799,14 +958,33 @@ export class CanvasRenderer {
     this.drawHudMetric('Night', snapshot.nightLevel.toString(), contentLeft, firstRowY + rowGap * 2, contentWidth);
     this.drawGlowMeter(snapshot.glow, snapshot.maxGlow, contentLeft, firstRowY + rowGap * 3 + 2, contentWidth);
 
-    if (hasShield) {
+    for (let index = 0; index < statusRows.length; index += 1) {
+      const row = statusRows[index];
+
       ctx.save();
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'rgba(205, 255, 255, 0.86)';
+      ctx.fillStyle = row.color;
       ctx.font = `600 ${isNarrow ? 12 : 13}px Inter, system-ui, sans-serif`;
-      ctx.fillText(`Moon Shield: ${snapshot.moonShieldRemaining.toFixed(1)}s`, contentLeft, firstRowY + rowGap * 4 + 8);
+      ctx.fillText(
+        row.value ? `${row.label}: ${row.value}` : row.label,
+        contentLeft,
+        firstRowY + rowGap * 4 + 8 + index * (isNarrow ? 21 : 23),
+      );
       ctx.restore();
+    }
+  }
+
+  private getHudMessageColor(kind: HudMessageKind, alpha = 1): string {
+    const safeAlpha = Math.max(0, Math.min(1, alpha));
+
+    switch (kind) {
+      case 'moonDash':
+        return `rgba(177, 255, 120, ${0.9 * safeAlpha})`;
+      case 'glowSurge':
+        return `rgba(255, 224, 107, ${0.92 * safeAlpha})`;
+      case 'moonShield':
+        return `rgba(205, 255, 255, ${0.86 * safeAlpha})`;
     }
   }
 

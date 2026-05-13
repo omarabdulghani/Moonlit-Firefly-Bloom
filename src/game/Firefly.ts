@@ -17,8 +17,8 @@ export class Firefly {
     this.velocityY = 0;
   }
 
-  update(deltaTime: number, input: MovementInput, bounds: CanvasSize): void {
-    const targetVelocity = this.getTargetVelocity(input);
+  update(deltaTime: number, input: MovementInput, bounds: CanvasSize, speedMultiplier = 1): void {
+    const targetVelocity = this.getTargetVelocity(input, speedMultiplier);
     const hasInput = targetVelocity.x !== 0 || targetVelocity.y !== 0;
     const response = hasInput ? this.acceleration : this.damping;
     const blend = 1 - Math.exp(-response * deltaTime);
@@ -40,7 +40,9 @@ export class Firefly {
     };
   }
 
-  private getTargetVelocity(input: MovementInput) {
+  private getTargetVelocity(input: MovementInput, speedMultiplier: number) {
+    const movementSpeed = this.movementSpeed * speedMultiplier;
+
     if (input.pointerActive && input.pointerTarget) {
       const dx = input.pointerTarget.x - this.x;
       const dy = input.pointerTarget.y - this.y;
@@ -50,7 +52,7 @@ export class Firefly {
         return { x: 0, y: 0 };
       }
 
-      const arriveSpeed = Math.min(this.movementSpeed, distance * 4);
+      const arriveSpeed = Math.min(movementSpeed, distance * 4 * speedMultiplier);
       return {
         x: (dx / distance) * arriveSpeed,
         y: (dy / distance) * arriveSpeed,
@@ -58,8 +60,8 @@ export class Firefly {
     }
 
     return {
-      x: input.direction.x * this.movementSpeed,
-      y: input.direction.y * this.movementSpeed,
+      x: input.direction.x * movementSpeed,
+      y: input.direction.y * movementSpeed,
     };
   }
 

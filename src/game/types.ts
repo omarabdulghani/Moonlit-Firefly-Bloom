@@ -37,6 +37,7 @@ export type MoonlightOrbSnapshot = {
   y: number;
   radius: number;
   pulseScale: number;
+  fadeAlpha: number;
 };
 
 export type ShadowHazardSnapshot = {
@@ -59,7 +60,26 @@ export type MoonShieldPowerupSnapshot = {
   pulseScale: number;
 };
 
+export type PowerupType = 'moonDash' | 'glowSurge';
+
+export type PowerupSnapshot = {
+  type: PowerupType;
+  x: number;
+  y: number;
+  radius: number;
+  pulseScale: number;
+  fadeAlpha: number;
+};
+
 export type MoonRainMessage = 'start' | 'end' | null;
+
+export type HudMessageKind = 'moonShield' | 'moonDash' | 'glowSurge';
+
+export type TemporaryHudMessageSnapshot = {
+  text: string;
+  kind: HudMessageKind;
+  progress: number;
+};
 
 export type RenderSnapshot = {
   state: GameState;
@@ -88,8 +108,12 @@ export type RenderSnapshot = {
   isTouchingShadow: boolean;
   moonShieldRemaining: number;
   moonShieldDuration: number;
+  moonDashRemaining: number;
+  moonDashDuration: number;
+  temporaryHudMessage: TemporaryHudMessageSnapshot | null;
   bloomBurst: BloomBurstSnapshot | null;
   moonShieldPowerup: MoonShieldPowerupSnapshot | null;
+  powerups: PowerupSnapshot[];
   firefly: FireflySnapshot | null;
   moonlightOrbs: MoonlightOrbSnapshot[];
   shadowHazards: ShadowHazardSnapshot[];

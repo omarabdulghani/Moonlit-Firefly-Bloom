@@ -3,6 +3,7 @@ import type { MoonPhaseName } from '../game/types';
 type SoundId =
   | 'bloomBurst'
   | 'gameOver'
+  | 'glowSurgePowerup'
   | 'lowGlowWarning'
   | 'moonPhaseCrescent'
   | 'moonPhaseFull'
@@ -15,6 +16,7 @@ type SoundId =
   | 'moonShield'
   | 'orbCollect'
   | 'shadowDamage'
+  | 'speedPowerup'
   | 'startRun';
 
 type SoundConfig = {
@@ -32,6 +34,10 @@ const SOUND_CONFIGS: Record<SoundId, SoundConfig> = {
   gameOver: {
     path: '/sounds/game-over-glow-faded.wav',
     volume: 0.6,
+  },
+  glowSurgePowerup: {
+    path: '/sounds/x2-powerup.wav',
+    volume: 0.55,
   },
   lowGlowWarning: {
     path: '/sounds/low-glow-warning.wav',
@@ -84,6 +90,10 @@ const SOUND_CONFIGS: Record<SoundId, SoundConfig> = {
     path: '/sounds/shadow-damage.wav',
     volume: 0.45,
     cooldownSeconds: 0.75,
+  },
+  speedPowerup: {
+    path: '/sounds/speed-powerup.wav',
+    volume: 0.58,
   },
   startRun: {
     path: '/sounds/start-run.wav',
@@ -203,6 +213,14 @@ export class AudioManager {
 
   playMoonShield(): void {
     this.play('moonShield');
+  }
+
+  playSpeedPowerup(): void {
+    this.play('speedPowerup');
+  }
+
+  playGlowSurgePowerup(): void {
+    this.play('glowSurgePowerup');
   }
 
   private createAudioElement(id: SoundId, config: SoundConfig): HTMLAudioElement {

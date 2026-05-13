@@ -195,6 +195,34 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: Audio should make collecting light, taking shadow damage, Bloom Bursts, Moon Rain, Moon Shield, run start, and game over feel more alive without changing gameplay or adding settings/menu scope.
 - Alternatives considered: No sound, a larger audio engine, music systems, a settings menu, uncapped repeated sound playback.
 
+### Moon Dash and Glow Surge Powerups
+
+- Date: `2026-05-14`
+- Decision: Add two temporary special pickups: Moon Dash for a short speed boost and Glow Surge for an instant 50-glow refill, with limited lifetimes and a more generous early-run spawn cadence before the first later Full Moon cycle.
+- Reason: The run needed more immediately rewarding collectible moments without adding permanent upgrades, currencies, shops, achievements, menus, new enemies, or online systems.
+- Alternatives considered: Permanent upgrades, combo multipliers, negative powerups, inventory systems, increasing normal orb rewards, leaving early runs dependent only on moonlight orbs and Moon Shield.
+
+### Powerup Clarity and Separate Pickup Sounds
+
+- Date: `2026-05-14`
+- Decision: Make Moon Dash green/electric with a lightning icon and a stronger temporary speed multiplier, keep Glow Surge gold with an `x2` icon, and give each new powerup its own pickup sound.
+- Reason: The new pickups should be recognizable at a glance and feel more satisfying without changing their spawn rules, adding new systems, or reusing the Moon Shield sound for unrelated effects.
+- Alternatives considered: Keeping the cyan speed visual, keeping the plus icon, using the Moon Shield sound for all powerups, adding a settings menu, adding new powerup types.
+
+### Powerup Feedback and Orb Lifecycle
+
+- Date: `2026-05-14`
+- Decision: Add color-matched HUD feedback for powerups, show a short Glow Surge reward message, let normal moonlight orbs expire and respawn, make Moon Shield and Moon Dash restore normal orb glow, and allow high-glow Glow Surge pickups to trigger Bloom Burst.
+- Reason: Powerups and moonlight should feel clearer, more rewarding, and more alive without adding new pickup types, menus, upgrades, economies, enemies, maps, or monetization.
+- Alternatives considered: Permanent HUD panels, new combo systems, new powerup types, stronger global rebalance, leaving normal orbs static forever, keeping shield/speed pickups as effect-only rewards.
+
+### Shield Icon and x2 Text Polish
+
+- Date: `2026-05-14`
+- Decision: Refine the code-drawn Moon Shield pickup into a clearer classic shield silhouette and remove the stroke from the Glow Surge `x2` text.
+- Reason: The shield should read as protective at small size, and the `x2` mark should feel cleaner without changing gameplay, sounds, HUD behavior, powerup effects, or adding new assets.
+- Alternatives considered: Importing shield art, tracing the reference image, adding more icon details, keeping the abstract shield shape, keeping the heavier outlined `x2` text.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`

@@ -1,10 +1,11 @@
 import type { AudioManager } from '../audio/AudioManager';
 import type { InputManager } from '../input/InputManager';
 import type { CanvasRenderer } from '../render/CanvasRenderer';
-import type { GameState, MoonPhaseName, MoonRainMessage, RenderSnapshot } from './types';
+import type { GameState, HudMessageKind, MoonPhaseName, MoonRainMessage, PowerupType, RenderSnapshot } from './types';
 import { Firefly } from './Firefly';
 import { MoonlightOrb } from './MoonlightOrb';
 import { MoonShieldPowerup, type MoonShieldSpawnAvoidPoint } from './MoonShieldPowerup';
+import { Powerup, type PowerupSpawnAvoidPoint } from './Powerup';
 import { ShadowHazard } from './ShadowHazard';
 
 export class Game {
@@ -46,6 +47,11 @@ export class Game {
   private moonRainMessage: MoonRainMessage = null;
   private moonShieldTimer = 0;
   private moonShieldSpawnTimer = 0;
+  private moonDashTimer = 0;
+  private powerupSpawnTimer = 0;
+  private temporaryHudMessageTimer = 0;
+  private temporaryHudMessageText = '';
+  private temporaryHudMessageKind: HudMessageKind = 'glowSurge';
   private isTouchingShadow = false;
   // Glow is the player's health-like resource.
   private readonly maxGlow = 100;
@@ -58,6 +64,8 @@ export class Game {
   private readonly passiveDrainIncreasePerNightLevel = 0.5;
   // Moonlight orbs restore this much glow when collected.
   private readonly orbGlowRestore = 12;
+  // Normal moonlight stays longer than special powerups, then cycles to keep the arena alive.
+  private readonly moonlightOrbLifetimeSeconds = 16;
   // Low-glow warning repeats through the audio cooldown while glow stays under this ratio.
   private readonly lowGlowWarningThreshold = 0.25;
   // Short positive feedback window after collecting a moonlight orb.
@@ -86,6 +94,7 @@ export class Game {
   private readonly moonRainExtraOrbCount = 3;
   private readonly moonRainShadowSpeedMultiplier = 1.18;
   private readonly moonRainMessageDuration = 1.8;
+  private readonly temporaryHudMessageDuration = 1.6;
   // Moon Shield is a rare temporary pickup, not permanent progression.
   private readonly moonShieldDurationSeconds = 5;
   private readonly moonShieldFirstSpawnDelaySeconds = 15;
@@ -95,11 +104,31 @@ export class Game {
   private readonly moonShieldSpawnSafeDistanceFromFirefly = 145;
   private readonly moonShieldSpawnSafeDistanceFromShadows = 96;
   private readonly moonShieldSpawnSafeDistanceFromOrbs = 72;
+  // Moon Dash and Glow Surge are temporary run-only pickups, biased to appear earlier.
+  private readonly moonDashDurationSeconds = 5;
+  private readonly moonDashSpeedMultiplier = 1.85;
+  private readonly glowSurgeRestoreAmount = 50;
+  private readonly glowSurgeHalfThreshold = 0.5;
+  private readonly powerupRadius = 14;
+  private readonly powerupLifetimeSeconds = 9;
+  private readonly maxActivePowerups = 2;
+  private readonly earlyRunNightThreshold = 9;
+  private readonly earlyRunPowerupSpawnIntervalMin = 5;
+  private readonly earlyRunPowerupSpawnIntervalMax = 8;
+  private readonly normalPowerupSpawnIntervalMin = 12;
+  private readonly normalPowerupSpawnIntervalMax = 18;
+  private readonly earlyRunGlowSurgeSpawnBias = 0.58;
+  private readonly normalGlowSurgeSpawnBias = 0.44;
+  private readonly powerupSpawnSafeDistanceFromFirefly = 130;
+  private readonly powerupSpawnSafeDistanceFromShadows = 92;
+  private readonly powerupSpawnSafeDistanceFromOrbs = 58;
+  private readonly powerupSpawnSafeDistanceFromPowerups = 70;
   private readonly firefly = new Firefly();
   private readonly moonlightOrbs: MoonlightOrb[] = [];
   private readonly moonlightOrbCount = 6;
   private readonly shadowHazards: ShadowHazard[] = [];
   private readonly moonShieldPowerup = new MoonShieldPowerup(this.moonShieldRadius);
+  private readonly powerups: Powerup[] = [];
 
   constructor(
     private readonly renderer: CanvasRenderer,
@@ -137,14 +166,23 @@ export class Game {
       this.levelUpMessageTimer = Math.max(0, this.levelUpMessageTimer - safeDeltaTime);
       this.moonPhaseTransitionTimer = Math.max(0, this.moonPhaseTransitionTimer - safeDeltaTime);
       this.moonRainMessageTimer = Math.max(0, this.moonRainMessageTimer - safeDeltaTime);
+      this.temporaryHudMessageTimer = Math.max(0, this.temporaryHudMessageTimer - safeDeltaTime);
       this.updateMoonRain(safeDeltaTime);
       this.moonShieldTimer = Math.max(0, this.moonShieldTimer - safeDeltaTime);
-      this.firefly.update(safeDeltaTime, this.input.getMovementInput(), this.renderer.getSize());
+      this.moonDashTimer = Math.max(0, this.moonDashTimer - safeDeltaTime);
+      this.firefly.update(
+        safeDeltaTime,
+        this.input.getMovementInput(),
+        this.renderer.getSize(),
+        this.getFireflySpeedMultiplier(),
+      );
       this.updateMoonlightOrbs(safeDeltaTime);
       this.updateShadowHazards(safeDeltaTime);
       this.updateMoonShieldPowerup(safeDeltaTime);
+      this.updateSpecialPowerups(safeDeltaTime);
       this.collectTouchedOrbs();
       this.collectTouchedMoonShield();
+      this.collectTouchedSpecialPowerups();
       this.applyPassiveGlowDrain(safeDeltaTime);
       this.isTouchingShadow = this.applyShadowDamage(safeDeltaTime);
       this.updateLowGlowWarning();
@@ -187,9 +225,17 @@ export class Game {
       isTouchingShadow: this.isTouchingShadow && !this.isMoonShieldActive(),
       moonShieldRemaining: this.moonShieldTimer,
       moonShieldDuration: this.moonShieldDurationSeconds,
+      moonDashRemaining: this.moonDashTimer,
+      moonDashDuration: this.moonDashDurationSeconds,
+      temporaryHudMessage: this.getTemporaryHudMessageSnapshot(),
       bloomBurst: this.getBloomBurstSnapshot(),
       moonShieldPowerup:
         this.state === 'start' ? null : this.moonShieldPowerup.getSnapshot(),
+      powerups: this.state === 'start'
+        ? []
+        : this.powerups
+          .map((powerup) => powerup.getSnapshot())
+          .filter((snapshot) => snapshot !== null),
       firefly: this.state === 'start' ? null : this.firefly.getSnapshot(),
       moonlightOrbs:
         this.state === 'start' ? [] : this.moonlightOrbs.map((orb) => orb.getSnapshot()),
@@ -233,6 +279,11 @@ export class Game {
     this.moonShieldTimer = 0;
     this.moonShieldSpawnTimer = this.moonShieldFirstSpawnDelaySeconds;
     this.moonShieldPowerup.despawn();
+    this.moonDashTimer = 0;
+    this.powerups.length = 0;
+    this.powerupSpawnTimer = this.getNextPowerupSpawnDelay();
+    this.temporaryHudMessageTimer = 0;
+    this.temporaryHudMessageText = '';
     this.isTouchingShadow = false;
     this.firefly.reset(this.renderer.getSize());
     this.resetMoonlightOrbs();
@@ -259,8 +310,15 @@ export class Game {
   }
 
   private updateMoonlightOrbs(deltaTime: number): void {
+    const bounds = this.renderer.getSize();
+    const fireflyPosition = { x: this.firefly.x, y: this.firefly.y };
+
     for (const orb of this.moonlightOrbs) {
       orb.update(deltaTime);
+
+      if (orb.isExpired()) {
+        orb.respawn(bounds, fireflyPosition);
+      }
     }
   }
 
@@ -298,7 +356,11 @@ export class Game {
     const fireflyPosition = { x: this.firefly.x, y: this.firefly.y };
 
     while (this.moonlightOrbs.length < targetCount) {
-      this.moonlightOrbs.push(new MoonlightOrb(bounds, fireflyPosition));
+      this.moonlightOrbs.push(new MoonlightOrb(
+        bounds,
+        fireflyPosition,
+        this.moonlightOrbLifetimeSeconds,
+      ));
     }
   }
 
@@ -324,6 +386,25 @@ export class Game {
     }
   }
 
+  private updateSpecialPowerups(deltaTime: number): void {
+    for (const powerup of this.powerups) {
+      powerup.update(deltaTime);
+    }
+
+    this.removeInactivePowerups();
+
+    if (this.powerups.length >= this.maxActivePowerups) {
+      return;
+    }
+
+    this.powerupSpawnTimer = Math.max(0, this.powerupSpawnTimer - deltaTime);
+
+    if (this.powerupSpawnTimer <= 0) {
+      this.spawnSpecialPowerup();
+      this.powerupSpawnTimer = this.getNextPowerupSpawnDelay();
+    }
+  }
+
   private collectTouchedOrbs(): void {
     const bounds = this.renderer.getSize();
     const fireflyPosition = { x: this.firefly.x, y: this.firefly.y };
@@ -336,8 +417,7 @@ export class Game {
 
         this.score += orb.value;
         this.orbsCollected += 1;
-        this.glow = Math.min(this.maxGlow, glowBeforeCollection + this.orbGlowRestore);
-        this.collectPulseTimer = this.collectPulseDuration;
+        this.restoreGlow(this.orbGlowRestore);
         this.audio.playOrbCollect();
 
         if (this.canTriggerBloomBurst(glowBeforeCollection)) {
@@ -391,9 +471,30 @@ export class Game {
     }
 
     this.moonShieldPowerup.despawn();
+    this.restoreGlow(this.orbGlowRestore);
     this.moonShieldTimer = this.moonShieldDurationSeconds;
     this.scheduleNextMoonShieldSpawn();
     this.audio.playMoonShield();
+  }
+
+  private collectTouchedSpecialPowerups(): void {
+    for (const powerup of this.powerups) {
+      if (!powerup.active) {
+        continue;
+      }
+
+      const distance = Math.hypot(this.firefly.x - powerup.x, this.firefly.y - powerup.y);
+
+      if (distance > this.firefly.radius + powerup.radius) {
+        continue;
+      }
+
+      this.applySpecialPowerup(powerup.type);
+      powerup.despawn();
+      this.playSpecialPowerupSound(powerup.type);
+    }
+
+    this.removeInactivePowerups();
   }
 
   private triggerBloomBurst(origin: { x: number; y: number }): void {
@@ -570,6 +671,17 @@ export class Game {
     this.moonShieldPowerup.spawn(this.renderer.getSize(), this.getMoonShieldAvoidPoints());
   }
 
+  private spawnSpecialPowerup(): void {
+    const powerup = new Powerup(
+      this.choosePowerupType(),
+      this.powerupRadius,
+      this.powerupLifetimeSeconds,
+    );
+
+    powerup.spawn(this.renderer.getSize(), this.getPowerupAvoidPoints());
+    this.powerups.push(powerup);
+  }
+
   private scheduleNextMoonShieldSpawn(): void {
     this.moonShieldSpawnTimer = this.randomBetween(
       this.moonShieldMinRespawnSeconds,
@@ -595,6 +707,130 @@ export class Game {
         safeDistance: orb.radius + this.moonShieldSpawnSafeDistanceFromOrbs,
       })),
     ];
+  }
+
+  private getPowerupAvoidPoints(): PowerupSpawnAvoidPoint[] {
+    return [
+      {
+        x: this.firefly.x,
+        y: this.firefly.y,
+        safeDistance: this.powerupSpawnSafeDistanceFromFirefly,
+      },
+      ...this.shadowHazards.map((hazard) => ({
+        x: hazard.x,
+        y: hazard.y,
+        safeDistance: hazard.radius + this.powerupSpawnSafeDistanceFromShadows,
+      })),
+      ...this.moonlightOrbs.map((orb) => ({
+        x: orb.x,
+        y: orb.y,
+        safeDistance: orb.radius + this.powerupSpawnSafeDistanceFromOrbs,
+      })),
+      ...this.powerups.map((powerup) => ({
+        x: powerup.x,
+        y: powerup.y,
+        safeDistance: powerup.radius + this.powerupSpawnSafeDistanceFromPowerups,
+      })),
+      ...(this.moonShieldPowerup.active
+        ? [{
+            x: this.moonShieldPowerup.x,
+            y: this.moonShieldPowerup.y,
+            safeDistance: this.moonShieldPowerup.radius + this.powerupSpawnSafeDistanceFromPowerups,
+          }]
+        : []),
+    ];
+  }
+
+  private applySpecialPowerup(type: PowerupType): void {
+    if (type === 'moonDash') {
+      this.restoreGlow(this.orbGlowRestore);
+      this.moonDashTimer = this.moonDashDurationSeconds;
+      return;
+    }
+
+    const glowBeforeCollection = this.glow;
+    const shouldOverflow = glowBeforeCollection / this.maxGlow > this.glowSurgeHalfThreshold;
+
+    this.glow = shouldOverflow
+      ? this.maxGlow
+      : Math.min(this.maxGlow, this.glow + this.glowSurgeRestoreAmount);
+    this.collectPulseTimer = this.collectPulseDuration;
+    this.showTemporaryHudMessage('Glow x2', 'glowSurge');
+
+    if (shouldOverflow && this.canTriggerBloomBurst(glowBeforeCollection)) {
+      this.triggerBloomBurst({ x: this.firefly.x, y: this.firefly.y });
+    }
+  }
+
+  private playSpecialPowerupSound(type: PowerupType): void {
+    if (type === 'moonDash') {
+      this.audio.playSpeedPowerup();
+      return;
+    }
+
+    this.audio.playGlowSurgePowerup();
+  }
+
+  private removeInactivePowerups(): void {
+    for (let index = this.powerups.length - 1; index >= 0; index -= 1) {
+      if (!this.powerups[index].active) {
+        this.powerups.splice(index, 1);
+      }
+    }
+  }
+
+  private choosePowerupType(): PowerupType {
+    const glowSurgeChance = this.isEarlyRun()
+      ? this.earlyRunGlowSurgeSpawnBias
+      : this.normalGlowSurgeSpawnBias;
+
+    if (this.glow / this.maxGlow < 0.45) {
+      return 'glowSurge';
+    }
+
+    return Math.random() < glowSurgeChance ? 'glowSurge' : 'moonDash';
+  }
+
+  private getNextPowerupSpawnDelay(): number {
+    const min = this.isEarlyRun()
+      ? this.earlyRunPowerupSpawnIntervalMin
+      : this.normalPowerupSpawnIntervalMin;
+    const max = this.isEarlyRun()
+      ? this.earlyRunPowerupSpawnIntervalMax
+      : this.normalPowerupSpawnIntervalMax;
+
+    return this.randomBetween(min, max);
+  }
+
+  private isEarlyRun(): boolean {
+    return this.nightLevel < this.earlyRunNightThreshold;
+  }
+
+  private getFireflySpeedMultiplier(): number {
+    return this.moonDashTimer > 0 ? this.moonDashSpeedMultiplier : 1;
+  }
+
+  private restoreGlow(amount: number): void {
+    this.glow = Math.min(this.maxGlow, this.glow + amount);
+    this.collectPulseTimer = this.collectPulseDuration;
+  }
+
+  private showTemporaryHudMessage(text: string, kind: HudMessageKind): void {
+    this.temporaryHudMessageText = text;
+    this.temporaryHudMessageKind = kind;
+    this.temporaryHudMessageTimer = this.temporaryHudMessageDuration;
+  }
+
+  private getTemporaryHudMessageSnapshot() {
+    if (this.temporaryHudMessageTimer <= 0) {
+      return null;
+    }
+
+    return {
+      text: this.temporaryHudMessageText,
+      kind: this.temporaryHudMessageKind,
+      progress: this.temporaryHudMessageTimer / this.temporaryHudMessageDuration,
+    };
   }
 
   private isMoonShieldActive(): boolean {

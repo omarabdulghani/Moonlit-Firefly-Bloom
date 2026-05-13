@@ -296,3 +296,51 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Handle missing or blocked audio without breaking gameplay.
 - [x] Preserve gameplay, scoring, tuning, visuals, input, and restart behavior.
 - [x] Avoid new menus, settings, mechanics, upgrades, achievements, monetization, PWA, Capacitor, and app-store files.
+
+## Phase 12: Special Powerups and Early-Run Hook
+
+- [x] Add Moon Dash as a temporary speed powerup.
+- [x] Add Glow Surge as an instant glow refill powerup.
+- [x] Give both powerups distinct code-drawn visuals and pulse/fade behavior.
+- [x] Despawn ignored powerups after a short lifetime.
+- [x] Limit active special powerups so the arena does not flood.
+- [x] Spawn special powerups more generously before the first later Full Moon cycle.
+- [x] Show a small Moon Dash HUD timer while the speed boost is active.
+- [x] Clear active powerups, timers, and speed boost state on new run.
+- [x] Preserve orb scoring, Bloom Burst, Moon Shield, Night Level, Moon Rain, best score, and mobile controls.
+- [x] Avoid shops, currencies, permanent upgrades, achievements, new menus, new enemies, online features, monetization, and app packaging.
+
+## Phase 12.1: Powerup Clarity and Sound Tuning
+
+- [x] Change Moon Dash to a bright green/electric visual identity.
+- [x] Replace the Moon Dash icon with a simple lightning bolt.
+- [x] Increase Moon Dash speed multiplier so the boost feels clearly faster.
+- [x] Keep Glow Surge yellow/gold but replace the plus mark with an `x2` icon.
+- [x] Add separate runtime sound paths for Moon Dash and Glow Surge pickups.
+- [x] Play the speed powerup sound for Moon Dash.
+- [x] Play the x2 powerup sound for Glow Surge.
+- [x] Keep Moon Shield using its existing shield sound.
+- [x] Preserve existing spawn timing, lifetime, scoring, Moon Rain, Bloom Burst, Night Level, controls, and reset behavior.
+- [x] Avoid new powerups, menus, upgrades, currencies, monetization, and app packaging.
+
+## Phase 12.2: Powerup Feedback, Orb Lifecycle, and Visual Clarity
+
+- [x] Add temporary gold HUD reward feedback when Glow Surge is collected.
+- [x] Match temporary HUD status colors to Moon Shield, Moon Dash, and Glow Surge identities.
+- [x] Make normal moonlight orbs expire after a longer lifetime than powerups and respawn elsewhere.
+- [x] Add a subtle late-life fade/pulse cue for expiring moonlight orbs.
+- [x] Let Glow Surge fill to max and trigger Bloom Burst when collected above half glow.
+- [x] Let Moon Shield and Moon Dash restore the same glow amount as a normal moonlight orb.
+- [x] Remove extra inner marks from the Moon Dash icon while keeping the green pulsing look.
+- [x] Remove the inner disk from the Glow Surge icon and make `x2` larger and higher contrast.
+- [x] Preserve spawn timing, powerup lifetime, Moon Rain, Bloom Burst, Night Level, scoring, controls, and reset flow.
+- [x] Avoid new powerups, menus, upgrades, currencies, monetization, maps, enemies, and app packaging.
+
+## Phase 12.3: Shield Icon Polish and x2 Text Cleanup
+
+- [x] Refine Moon Shield into a clearer classic shield silhouette.
+- [x] Keep Moon Shield code-drawn with its existing blue glow and pulse family.
+- [x] Remove the stroke/outline from the Glow Surge `x2` text.
+- [x] Keep `x2` large, clean, and readable.
+- [x] Preserve all gameplay, powerup behavior, sounds, HUD logic, orb behavior, background, and controls.
+- [x] Avoid new systems, menus, assets, sounds, upgrades, monetization, PWA, and app packaging.
