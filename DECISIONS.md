@@ -272,6 +272,13 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: Leaving the browser or pausing should not keep draining glow or accidentally end the run; the firefly should feel like it is waiting for the player.
 - Alternatives considered: Visual-only pause overlay, no pause on blur, only keyboard pause, continuing timers while paused, full pause menu.
 
+### Pause Overlay Spacing Polish
+
+- Date: `2026-05-14`
+- Decision: Rebalance the pause overlay spacing so the crescent, title, subtitle, Resume button, helper text, and panel padding feel tidy and intentional.
+- Reason: The pause overlay should feel like part of the game aesthetic, not a temporary debug panel, while preserving the existing pause behavior.
+- Alternatives considered: Larger redesign, adding decorative art, moving pause UI into DOM, leaving the cramped helper/button spacing unchanged.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`

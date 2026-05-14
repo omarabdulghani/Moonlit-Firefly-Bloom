@@ -1424,18 +1424,21 @@ export class CanvasRenderer {
   private drawPauseOverlay(centerX: number, centerY: number): void {
     const { width, height } = this.size;
     const ctx = this.context;
+    const isCompact = width < 420 || height < 360;
     const panelWidth = Math.min(width - 32, 390);
-    const panelHeight = width < 420 ? 202 : 216;
+    const panelHeight = isCompact ? 220 : 232;
     const panelX = centerX - panelWidth / 2;
     const panelY = centerY - panelHeight / 2;
     const buttonWidth = Math.min(168, panelWidth - 72);
     const buttonHeight = 38;
     const buttonX = centerX - buttonWidth / 2;
-    const buttonY = panelY + panelHeight - 74;
-    const crescentY = panelY + 44;
-    const titleY = panelY + 88;
-    const subtitleY = panelY + 118;
-    const helperY = panelY + panelHeight - 22;
+    const topClearance = isCompact ? 22 : 26;
+    const crescentRadius = 8;
+    const crescentY = panelY + topClearance + crescentRadius;
+    const titleY = crescentY + (isCompact ? 41 : 44);
+    const subtitleY = titleY + (isCompact ? 28 : 31);
+    const buttonY = subtitleY + (isCompact ? 27 : 29);
+    const helperY = panelY + panelHeight - topClearance - 6;
 
     ctx.save();
     ctx.fillStyle = 'rgba(2, 5, 14, 0.5)';

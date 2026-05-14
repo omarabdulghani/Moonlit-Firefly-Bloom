@@ -417,3 +417,11 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Add a calm in-world pause overlay with a crescent icon and personal copy.
 - [x] Fix pause overlay shape/padding so it fits the game aesthetic.
 - [x] Preserve gameplay systems, powerups, sound mappings, scoring, and restart flow.
+
+## Phase 12.9: Pause Overlay Spacing Polish
+
+- [x] Rebalance the pause overlay vertical spacing.
+- [x] Keep the crescent icon small, clean, and glow-free.
+- [x] Add clearer breathing room between the helper text and Resume button.
+- [x] Match the bottom padding under the helper text more closely to the top padding above the crescent.
+- [x] Preserve pause/resume behavior, gameplay timers, audio behavior, controls, and all gameplay systems.
