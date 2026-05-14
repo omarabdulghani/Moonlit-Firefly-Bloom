@@ -36,6 +36,9 @@ export class Game {
   private bloomBurstTimer = 0;
   private bloomBurstCooldownTimer = 0;
   private bloomBurstPosition = { x: 0, y: 0 };
+  private glowSurgeRewardTimer = 0;
+  private glowSurgeRewardPosition = { x: 0, y: 0 };
+  private glowSurgeRewardFeedsBloom = false;
   private shadowHitFlashTimer = 0;
   private levelUpMessageTimer = 0;
   private previousMoonPhaseIndex = 0;
@@ -109,6 +112,7 @@ export class Game {
   private readonly moonDashSpeedMultiplier = 1.85;
   private readonly glowSurgeRestoreAmount = 50;
   private readonly glowSurgeHalfThreshold = 0.5;
+  private readonly glowSurgeRewardDuration = 0.68;
   private readonly powerupRadius = 14;
   private readonly powerupLifetimeSeconds = 9;
   private readonly maxActivePowerups = 2;
@@ -134,10 +138,25 @@ export class Game {
     private readonly renderer: CanvasRenderer,
     private readonly input: InputManager,
     private readonly audio: AudioManager,
+    private readonly onStateChange: (state: GameState) => void = () => {},
   ) {}
 
   start(): void {
+    this.onStateChange(this.state);
     requestAnimationFrame(this.tick);
+  }
+
+  pause(): void {
+    if (this.state !== 'playing') {
+      return;
+    }
+
+    this.state = 'paused';
+    this.isTouchingShadow = false;
+    this.input.clearInput();
+    this.audio.stopMoonRainAmbience();
+    this.audio.stopLowGlowWarning();
+    this.onStateChange(this.state);
   }
 
   private tick = (timestamp: number): void => {
@@ -162,6 +181,7 @@ export class Game {
       this.collectPulseTimer = Math.max(0, this.collectPulseTimer - safeDeltaTime);
       this.bloomBurstTimer = Math.max(0, this.bloomBurstTimer - safeDeltaTime);
       this.bloomBurstCooldownTimer = Math.max(0, this.bloomBurstCooldownTimer - safeDeltaTime);
+      this.glowSurgeRewardTimer = Math.max(0, this.glowSurgeRewardTimer - safeDeltaTime);
       this.shadowHitFlashTimer = Math.max(0, this.shadowHitFlashTimer - safeDeltaTime);
       this.levelUpMessageTimer = Math.max(0, this.levelUpMessageTimer - safeDeltaTime);
       this.moonPhaseTransitionTimer = Math.max(0, this.moonPhaseTransitionTimer - safeDeltaTime);
@@ -229,6 +249,7 @@ export class Game {
       moonDashDuration: this.moonDashDurationSeconds,
       temporaryHudMessage: this.getTemporaryHudMessageSnapshot(),
       bloomBurst: this.getBloomBurstSnapshot(),
+      glowSurgeReward: this.getGlowSurgeRewardSnapshot(),
       moonShieldPowerup:
         this.state === 'start' ? null : this.moonShieldPowerup.getSnapshot(),
       powerups: this.state === 'start'
@@ -247,14 +268,35 @@ export class Game {
   }
 
   private handlePrimaryPress(): void {
+    if (this.state === 'paused') {
+      void this.audio.unlock();
+      this.resumePlaying();
+      return;
+    }
+
     if (this.state === 'start' || this.state === 'gameOver') {
       void this.audio.unlock();
       this.enterPlaying();
     }
   }
 
+  private resumePlaying(): void {
+    if (this.state !== 'paused') {
+      return;
+    }
+
+    this.input.clearInput();
+    this.state = 'playing';
+    this.onStateChange(this.state);
+
+    if (this.isMoonRainActive) {
+      this.audio.startMoonRainAmbience();
+    }
+  }
+
   private enterPlaying(): void {
     this.audio.stopMoonRainAmbience();
+    this.audio.stopLowGlowWarning();
     this.elapsedTime = 0;
     this.score = 0;
     this.orbsCollected = 0;
@@ -267,6 +309,9 @@ export class Game {
     this.bloomBurstTimer = 0;
     this.bloomBurstCooldownTimer = 0;
     this.bloomBurstPosition = { x: 0, y: 0 };
+    this.glowSurgeRewardTimer = 0;
+    this.glowSurgeRewardPosition = { x: 0, y: 0 };
+    this.glowSurgeRewardFeedsBloom = false;
     this.shadowHitFlashTimer = 0;
     this.levelUpMessageTimer = 0;
     this.previousMoonPhaseIndex = this.getMoonPhaseIndexForNight(1);
@@ -288,8 +333,9 @@ export class Game {
     this.firefly.reset(this.renderer.getSize());
     this.resetMoonlightOrbs();
     this.resetShadowHazards();
-    this.input.clearPointer();
+    this.input.clearInput();
     this.state = 'playing';
+    this.onStateChange(this.state);
     this.audio.playStartRun();
   }
 
@@ -300,8 +346,10 @@ export class Game {
 
     this.updateBestScore();
     this.audio.stopMoonRainAmbience();
+    this.audio.stopLowGlowWarning();
     this.audio.playGameOver();
     this.state = 'gameOver';
+    this.onStateChange(this.state);
   }
 
   private resetMoonlightOrbs(): void {
@@ -430,6 +478,10 @@ export class Game {
   }
 
   private applyPassiveGlowDrain(deltaTime: number): void {
+    if (this.isMoonShieldActive()) {
+      return;
+    }
+
     this.glow = Math.max(0, this.glow - this.getPassiveGlowDrainPerSecond() * deltaTime);
   }
 
@@ -529,6 +581,7 @@ export class Game {
 
   private updateLowGlowWarning(): void {
     if (this.glow <= 0 || this.glow / this.maxGlow > this.lowGlowWarningThreshold) {
+      this.audio.stopLowGlowWarning();
       return;
     }
 
@@ -756,8 +809,11 @@ export class Game {
       : Math.min(this.maxGlow, this.glow + this.glowSurgeRestoreAmount);
     this.collectPulseTimer = this.collectPulseDuration;
     this.showTemporaryHudMessage('Glow x2', 'glowSurge');
+    const willTriggerBloom = shouldOverflow && this.canTriggerBloomBurst(glowBeforeCollection);
 
-    if (shouldOverflow && this.canTriggerBloomBurst(glowBeforeCollection)) {
+    this.triggerGlowSurgeReward(willTriggerBloom);
+
+    if (willTriggerBloom) {
       this.triggerBloomBurst({ x: this.firefly.x, y: this.firefly.y });
     }
   }
@@ -813,12 +869,22 @@ export class Game {
   private restoreGlow(amount: number): void {
     this.glow = Math.min(this.maxGlow, this.glow + amount);
     this.collectPulseTimer = this.collectPulseDuration;
+
+    if (this.glow / this.maxGlow > this.lowGlowWarningThreshold) {
+      this.audio.stopLowGlowWarning();
+    }
   }
 
   private showTemporaryHudMessage(text: string, kind: HudMessageKind): void {
     this.temporaryHudMessageText = text;
     this.temporaryHudMessageKind = kind;
     this.temporaryHudMessageTimer = this.temporaryHudMessageDuration;
+  }
+
+  private triggerGlowSurgeReward(feedsBloom: boolean): void {
+    this.glowSurgeRewardTimer = this.glowSurgeRewardDuration;
+    this.glowSurgeRewardPosition = { x: this.firefly.x, y: this.firefly.y };
+    this.glowSurgeRewardFeedsBloom = feedsBloom;
   }
 
   private getTemporaryHudMessageSnapshot() {
@@ -830,6 +896,19 @@ export class Game {
       text: this.temporaryHudMessageText,
       kind: this.temporaryHudMessageKind,
       progress: this.temporaryHudMessageTimer / this.temporaryHudMessageDuration,
+    };
+  }
+
+  private getGlowSurgeRewardSnapshot() {
+    if (this.glowSurgeRewardTimer <= 0) {
+      return null;
+    }
+
+    return {
+      x: this.glowSurgeRewardPosition.x,
+      y: this.glowSurgeRewardPosition.y,
+      progress: 1 - this.glowSurgeRewardTimer / this.glowSurgeRewardDuration,
+      feedsBloom: this.glowSurgeRewardFeedsBloom,
     };
   }
 

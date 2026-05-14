@@ -108,6 +108,7 @@ export class AudioManager {
   private readonly sounds = new Map<SoundId, HTMLAudioElement>();
   private readonly unavailableSounds = new Set<SoundId>();
   private readonly lastPlayedAt = new Map<SoundId, number>();
+  private readonly activeOneShotSounds = new Map<SoundId, Set<HTMLAudioElement>>();
   private isUnlocked = false;
 
   constructor() {
@@ -166,6 +167,10 @@ export class AudioManager {
 
   playLowGlowWarning(): void {
     this.play('lowGlowWarning');
+  }
+
+  stopLowGlowWarning(): void {
+    this.stopOneShots('lowGlowWarning');
   }
 
   playGameOver(): void {
@@ -265,9 +270,49 @@ export class AudioManager {
     const sound = source.cloneNode(true) as HTMLAudioElement;
     sound.loop = false;
     sound.volume = config.volume;
+    this.trackOneShot(id, sound);
     sound.play().catch(() => {
+      this.untrackOneShot(id, sound);
       // Audio feedback should never interrupt gameplay if the browser blocks playback.
     });
+  }
+
+  private trackOneShot(id: SoundId, sound: HTMLAudioElement): void {
+    const activeSounds = this.activeOneShotSounds.get(id) ?? new Set<HTMLAudioElement>();
+
+    activeSounds.add(sound);
+    this.activeOneShotSounds.set(id, activeSounds);
+    sound.addEventListener('ended', () => this.untrackOneShot(id, sound), { once: true });
+  }
+
+  private untrackOneShot(id: SoundId, sound: HTMLAudioElement): void {
+    const activeSounds = this.activeOneShotSounds.get(id);
+
+    if (!activeSounds) {
+      return;
+    }
+
+    activeSounds.delete(sound);
+
+    if (activeSounds.size === 0) {
+      this.activeOneShotSounds.delete(id);
+    }
+  }
+
+  private stopOneShots(id: SoundId): void {
+    const activeSounds = this.activeOneShotSounds.get(id);
+
+    if (!activeSounds) {
+      return;
+    }
+
+    for (const sound of activeSounds) {
+      sound.pause();
+      sound.currentTime = 0;
+    }
+
+    activeSounds.clear();
+    this.activeOneShotSounds.delete(id);
   }
 
   private startLoop(id: SoundId): void {

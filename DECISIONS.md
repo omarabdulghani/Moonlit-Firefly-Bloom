@@ -188,6 +188,13 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: Later Full Moons should feel special and rewarding without adding ads, upgrades, new enemies, new powerups, score multipliers, or a separate game mode.
 - Alternatives considered: Triggering Moon Rain on Night 1, adding Full Moon score multipliers, spawning extra shadows, creating a new orb type, leaving Full Moons visual-only.
 
+### Moon Rain Falling Light Effect
+
+- Date: `2026-05-14`
+- Decision: Add a lightweight code-drawn falling moonlight effect that appears only while Moon Rain is active and renders behind gameplay objects.
+- Reason: Moon Rain should feel like a visible special event without obscuring the firefly, orbs, shadows, powerups, or HUD, and without changing any gameplay values.
+- Alternatives considered: Heavy particle systems, realistic water rain, foreground rain over gameplay, adding lightning/storm effects, leaving Moon Rain as a sound/gameplay-only event.
+
 ### Essential Sound Effects
 
 - Date: `2026-05-13`
@@ -222,6 +229,48 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Decision: Refine the code-drawn Moon Shield pickup into a clearer classic shield silhouette and remove the stroke from the Glow Surge `x2` text.
 - Reason: The shield should read as protective at small size, and the `x2` mark should feel cleaner without changing gameplay, sounds, HUD behavior, powerup effects, or adding new assets.
 - Alternatives considered: Importing shield art, tracing the reference image, adding more icon details, keeping the abstract shield shape, keeping the heavier outlined `x2` text.
+
+### Desktop Cursor Auto-Hide and Low-Glow Audio Stop
+
+- Date: `2026-05-14`
+- Decision: Hide the cursor during active mouse play, reveal it briefly on mouse movement/click, and stop the low-glow warning sound as soon as glow recovers.
+- Reason: Mouse play should feel more immersive without trapping the player, and warning audio should match the current danger state instead of continuing after the player fixes the problem.
+- Alternatives considered: Always hiding the cursor, always showing the cursor, leaving the heartbeat sound as a fire-and-forget cue, adding a settings menu.
+
+### Moon Shield Also Stops Passive Glow Drain
+
+- Date: `2026-05-14`
+- Decision: Moon Shield now prevents passive glow drain while active in addition to blocking shadow damage.
+- Reason: Shield should feel like a true protection moment, not only a shadow-contact modifier, while remaining temporary and run-only.
+- Alternatives considered: Keeping passive drain during shield, increasing shield duration, adding a second shield meter, making shield restore glow.
+
+### Stronger Shadow Drain Visual
+
+- Date: `2026-05-14`
+- Decision: Add a stronger local danger visual when touching shadows: a brief violet/red drain halo, ring, and inward streaks around the firefly.
+- Reason: Shadow contact needed to feel immediately dangerous and readable without changing damage numbers or becoming visually harsh.
+- Alternatives considered: More screen shake, louder audio, increased damage, full-screen flash only, adding new shadow behavior.
+
+### Glow Surge Reward Layer
+
+- Date: `2026-05-14`
+- Decision: Add a dedicated gold x2 surge visual when collecting Glow Surge, designed to sit inside or alongside Bloom Burst when both happen together.
+- Reason: The x2 pickup should feel like a big reward while keeping Bloom Burst readable and avoiding overlapping effects that feel messy.
+- Alternatives considered: Reusing Bloom Burst only, adding particles, changing x2 scoring, adding a separate combo system.
+
+### Ambient Sky Companions
+
+- Date: `2026-05-14`
+- Decision: Add subtle animated night birds, extra twinkling stars, and rare shooting stars as background atmosphere only.
+- Reason: The rooftop should feel less empty and more alive while preserving gameplay readability and avoiding new mechanics.
+- Alternatives considered: Static birds, image-based bird assets, foreground birds, interactive birds, adding weather systems.
+
+### Pause and Resume as a First-Class State
+
+- Date: `2026-05-14`
+- Decision: Add a real paused state triggered by `Esc`, browser blur, tab hiding, and page hiding, with a calm resume overlay.
+- Reason: Leaving the browser or pausing should not keep draining glow or accidentally end the run; the firefly should feel like it is waiting for the player.
+- Alternatives considered: Visual-only pause overlay, no pause on blur, only keyboard pause, continuing timers while paused, full pause menu.
 
 ### Browser-First
 

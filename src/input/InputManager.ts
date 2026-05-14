@@ -46,6 +46,14 @@ export class InputManager {
     this.pointerTarget = null;
   }
 
+  clearInput(): void {
+    this.primaryPressed = false;
+    this.gameOverPressed = false;
+    this.pointerActive = false;
+    this.pointerTarget = null;
+    this.pressedKeys.clear();
+  }
+
   private handlePrimaryPress = (event: PointerEvent) => {
     event.preventDefault();
     this.primaryPressed = true;
@@ -74,7 +82,7 @@ export class InputManager {
   private handleKeyDown = (event: KeyboardEvent) => {
     const key = event.key.toLowerCase();
 
-    if (event.key === 'Escape' || event.key.toLowerCase() === 'g') {
+    if (event.key.toLowerCase() === 'g') {
       this.gameOverPressed = true;
     }
 

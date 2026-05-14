@@ -13,6 +13,41 @@ interface BackgroundStar {
   radius: number;
   alpha: number;
   glint?: boolean;
+  twinklePhase?: number;
+}
+
+interface MoonRainDrop {
+  x: number;
+  y: number;
+  length: number;
+  speed: number;
+  alpha: number;
+  width: number;
+  drift: number;
+}
+
+interface NightBird {
+  startXRatio: number;
+  yRatio: number;
+  speed: number;
+  scale: number;
+  phase: number;
+  alpha: number;
+  direction: 1 | -1;
+  xWander: number;
+  yWanderRatio: number;
+  flapRate: number;
+}
+
+interface ShootingStar {
+  startX: number;
+  startY: number;
+  age: number;
+  duration: number;
+  length: number;
+  distance: number;
+  angle: number;
+  alpha: number;
 }
 
 interface SourceCrop {
@@ -44,10 +79,44 @@ const BACKGROUND_STARS: readonly BackgroundStar[] = [
   { x: 0.9, y: 0.38, radius: 0.55, alpha: 0.2 },
 ];
 
+const EXTRA_BACKGROUND_STARS: readonly BackgroundStar[] = Array.from({ length: 42 }, (_, index) => ({
+  x: 0.04 + seededNoise(index * 13.7 + 2.1) * 0.92,
+  y: 0.05 + seededNoise(index * 17.3 + 8.4) * 0.44,
+  radius: 0.28 + seededNoise(index * 19.1 + 4.9) * 0.56,
+  alpha: 0.08 + seededNoise(index * 23.5 + 1.6) * 0.2,
+  twinklePhase: seededNoise(index * 29.2 + 6.2) * Math.PI * 2,
+}));
+
+const ALL_BACKGROUND_STARS: readonly BackgroundStar[] = [
+  ...EXTRA_BACKGROUND_STARS,
+  ...BACKGROUND_STARS,
+];
+
+const NIGHT_BIRDS: readonly NightBird[] = [
+  { startXRatio: 0.08, yRatio: 0.17, speed: 14, scale: 0.82, phase: 0.4, alpha: 0.42, direction: 1, xWander: 34, yWanderRatio: 0.018, flapRate: 5.1 },
+  { startXRatio: 0.18, yRatio: 0.205, speed: 12, scale: 0.68, phase: 1.2, alpha: 0.34, direction: 1, xWander: 28, yWanderRatio: 0.016, flapRate: 4.6 },
+  { startXRatio: 0.9, yRatio: 0.18, speed: 10, scale: 0.76, phase: 2.7, alpha: 0.36, direction: -1, xWander: 38, yWanderRatio: 0.02, flapRate: 4.2 },
+  { startXRatio: 0.78, yRatio: 0.145, speed: 11, scale: 0.58, phase: 3.4, alpha: 0.3, direction: -1, xWander: 24, yWanderRatio: 0.014, flapRate: 5.5 },
+  { startXRatio: 0.45, yRatio: 0.27, speed: 8, scale: 0.52, phase: 4.8, alpha: 0.24, direction: 1, xWander: 22, yWanderRatio: 0.012, flapRate: 3.9 },
+];
+
+function seededNoise(seed: number): number {
+  const value = Math.sin(seed) * 10000;
+
+  return value - Math.floor(value);
+}
+
 export class CanvasRenderer {
   private readonly context: CanvasRenderingContext2D;
   private size: CanvasSize = { width: 0, height: 0 };
   private readonly backgroundAssets: Record<BackgroundAssetName, BackgroundAsset>;
+  private readonly moonRainDrops: MoonRainDrop[] = [];
+  private moonRainWasActive = false;
+  private moonRainLastElapsedTime = 0;
+  private moonRainDropCanvasSize: CanvasSize = { width: 0, height: 0 };
+  private shootingStar: ShootingStar | null = null;
+  private nextShootingStarAt = 5.5;
+  private lastShootingStarElapsedTime = 0;
   // Firefly aura tuning: glow level and collection pulses nudge the aura without becoming flashy.
   private readonly fireflyBaseAuraRadius = 4.4;
   private readonly fireflyAuraGlowFactor = 1.35;
@@ -55,6 +124,8 @@ export class CanvasRenderer {
   private readonly fireflyShadowDimFactor = 0.54;
   // Brief edge flash that makes shadow contact read as active glow drain.
   private readonly shadowHitFlashAlpha = 0.34;
+  private readonly shadowDrainHaloAlpha = 0.36;
+  private readonly shadowDrainRingAlpha = 0.7;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext('2d');
@@ -87,10 +158,14 @@ export class CanvasRenderer {
   render(snapshot: RenderSnapshot): void {
     this.clear();
     this.drawMoonlitGarden(
+      snapshot.elapsedTime,
+      snapshot.state,
       snapshot.previousMoonPhaseIndex,
       snapshot.moonPhaseIndex,
       snapshot.moonPhaseTransitionProgress,
     );
+
+    this.drawMoonRainEffect(snapshot);
 
     for (const hazard of snapshot.shadowHazards) {
       this.drawShadowHazard(hazard.x, hazard.y, hazard.radius);
@@ -136,6 +211,15 @@ export class CanvasRenderer {
       );
     }
 
+    if (snapshot.glowSurgeReward) {
+      this.drawGlowSurgeReward(
+        snapshot.glowSurgeReward.x,
+        snapshot.glowSurgeReward.y,
+        snapshot.glowSurgeReward.progress,
+        snapshot.glowSurgeReward.feedsBloom,
+      );
+    }
+
     if (snapshot.firefly) {
       this.drawFirefly(
         snapshot.firefly.x,
@@ -149,6 +233,14 @@ export class CanvasRenderer {
         snapshot.shadowHitFlash,
         snapshot.moonShieldRemaining,
         snapshot.moonShieldDuration,
+      );
+      this.drawShadowDrainFeedback(
+        snapshot.firefly.x,
+        snapshot.firefly.y,
+        snapshot.firefly.radius,
+        snapshot.elapsedTime,
+        snapshot.isTouchingShadow,
+        snapshot.shadowHitFlash,
       );
     }
 
@@ -197,6 +289,8 @@ export class CanvasRenderer {
   }
 
   private drawMoonlitGarden(
+    elapsedTime: number,
+    state: RenderSnapshot['state'],
     previousMoonPhaseIndex: number,
     moonPhaseIndex: number,
     moonPhaseTransitionProgress: number,
@@ -204,8 +298,10 @@ export class CanvasRenderer {
     const { width, height } = this.size;
 
     this.drawSkyBackground(width, height);
-    this.drawStars(width, height);
+    this.drawStars(width, height, elapsedTime);
+    this.drawShootingStar(width, height, elapsedTime, state);
     this.drawMoon(width, height, previousMoonPhaseIndex, moonPhaseIndex, moonPhaseTransitionProgress);
+    this.drawNightBirds(width, height, elapsedTime);
     this.drawSkylineAsset(width, height);
     this.drawRailingAsset(width, height);
     this.drawPlantAssets(width, height);
@@ -367,7 +463,13 @@ export class CanvasRenderer {
     return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
   }
 
-  private drawStars(width: number, height: number): void {
+  private easeOutCubic(progress: number): number {
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+
+    return 1 - Math.pow(1 - clampedProgress, 3);
+  }
+
+  private drawStars(width: number, height: number, elapsedTime: number): void {
     const ctx = this.context;
 
     ctx.save();
@@ -375,12 +477,16 @@ export class CanvasRenderer {
     ctx.strokeStyle = '#fff4c8';
     ctx.lineWidth = 1;
 
-    for (const star of BACKGROUND_STARS) {
+    for (const star of ALL_BACKGROUND_STARS) {
       const x = star.x * width;
       const y = star.y * height;
       const radius = Math.max(0.45, star.radius * Math.min(1.15, width / 840));
+      const twinkle =
+        star.twinklePhase === undefined
+          ? 1
+          : 0.78 + Math.sin(elapsedTime * 0.8 + star.twinklePhase) * 0.22;
 
-      ctx.globalAlpha = star.alpha;
+      ctx.globalAlpha = star.alpha * twinkle;
       ctx.beginPath();
       ctx.arc(x, y, radius, 0, Math.PI * 2);
       ctx.fill();
@@ -399,6 +505,180 @@ export class CanvasRenderer {
     }
 
     ctx.restore();
+  }
+
+  private drawShootingStar(
+    width: number,
+    height: number,
+    elapsedTime: number,
+    state: RenderSnapshot['state'],
+  ): void {
+    if (state !== 'playing') {
+      this.shootingStar = null;
+      this.lastShootingStarElapsedTime = elapsedTime;
+      return;
+    }
+
+    if (elapsedTime < this.lastShootingStarElapsedTime) {
+      this.shootingStar = null;
+      this.nextShootingStarAt = elapsedTime + this.randomBetween(4, 8);
+    }
+
+    const deltaTime = Math.max(0, Math.min(0.05, elapsedTime - this.lastShootingStarElapsedTime));
+
+    this.lastShootingStarElapsedTime = elapsedTime;
+
+    if (!this.shootingStar && elapsedTime >= this.nextShootingStarAt) {
+      this.shootingStar = this.createShootingStar(width, height);
+    }
+
+    if (!this.shootingStar) {
+      return;
+    }
+
+    this.shootingStar.age += deltaTime;
+
+    if (this.shootingStar.age >= this.shootingStar.duration) {
+      this.shootingStar = null;
+      this.nextShootingStarAt = elapsedTime + this.randomBetween(8, 16);
+      return;
+    }
+
+    this.renderShootingStar(this.shootingStar);
+  }
+
+  private createShootingStar(width: number, height: number): ShootingStar {
+    return {
+      startX: this.randomBetween(width * 0.12, width * 0.88),
+      startY: this.randomBetween(height * 0.07, height * 0.27),
+      age: 0,
+      duration: this.randomBetween(0.9, 1.25),
+      length: this.randomBetween(58, 90),
+      distance: this.randomBetween(170, 260),
+      angle: this.randomBetween(0.48, 0.72),
+      alpha: this.randomBetween(0.42, 0.66),
+    };
+  }
+
+  private renderShootingStar(star: ShootingStar): void {
+    const ctx = this.context;
+    const progress = star.age / star.duration;
+    const fadeIn = Math.min(1, progress / 0.18);
+    const fadeOut = Math.min(1, (1 - progress) / 0.34);
+    const alpha = star.alpha * fadeIn * fadeOut;
+    const travel = star.distance * this.easeOutCubic(progress);
+    const headX = star.startX + Math.cos(star.angle) * travel;
+    const headY = star.startY + Math.sin(star.angle) * travel;
+    const tailX = headX - Math.cos(star.angle) * star.length;
+    const tailY = headY - Math.sin(star.angle) * star.length;
+
+    const trail = ctx.createLinearGradient(tailX, tailY, headX, headY);
+    trail.addColorStop(0, 'rgba(190, 218, 255, 0)');
+    trail.addColorStop(0.6, `rgba(213, 231, 255, ${0.22 * alpha})`);
+    trail.addColorStop(1, `rgba(255, 246, 192, ${alpha})`);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = trail;
+    ctx.lineWidth = 1.6;
+    ctx.shadowColor = `rgba(221, 235, 255, ${0.44 * alpha})`;
+    ctx.shadowBlur = 10;
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(headX, headY);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(255, 250, 214, ${0.78 * alpha})`;
+    ctx.beginPath();
+    ctx.arc(headX, headY, 1.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  private drawNightBirds(width: number, height: number, elapsedTime: number): void {
+    const visibleBirds = width < 520 ? NIGHT_BIRDS.slice(0, 3) : NIGHT_BIRDS;
+    const wrapMargin = 110;
+    const wrapWidth = width + wrapMargin * 2;
+    const moonX = width * 0.78;
+    const moonY = height * 0.18;
+    const moonRadius = Math.max(32, Math.min(width, height) * 0.075);
+
+    for (const bird of visibleBirds) {
+      const speedDrift =
+        Math.sin(elapsedTime * 0.27 + bird.phase) * bird.xWander +
+        Math.sin(elapsedTime * 0.11 + bird.phase * 2.4) * bird.xWander * 0.55;
+      const travel = (bird.startXRatio * width + elapsedTime * bird.speed + speedDrift) % wrapWidth;
+      const x = bird.direction === 1 ? travel - wrapMargin : width + wrapMargin - travel;
+      const y =
+        bird.yRatio * height +
+        Math.sin(elapsedTime * 0.43 + bird.phase) * height * bird.yWanderRatio +
+        Math.sin(elapsedTime * 0.19 + bird.phase * 1.7) * height * bird.yWanderRatio * 0.45;
+      const scale = bird.scale * Math.max(0.82, Math.min(1.18, width / 1200));
+      const flap =
+        Math.sin(elapsedTime * bird.flapRate + bird.phase + Math.sin(elapsedTime * 0.7 + bird.phase) * 0.55);
+      const moonDistance = Math.hypot(x - moonX, y - moonY);
+      const moonSilhouette = Math.max(0, Math.min(1, 1 - moonDistance / (moonRadius * 1.12)));
+
+      this.drawNightBird(x, y, scale, flap, bird.alpha, bird.direction, moonSilhouette);
+    }
+  }
+
+  private drawNightBird(
+    x: number,
+    y: number,
+    scale: number,
+    flap: number,
+    alpha: number,
+    direction: 1 | -1,
+    moonSilhouette: number,
+  ): void {
+    const ctx = this.context;
+    const wingLift = 5 + flap * 3.4;
+    const wingDip = 4 - flap * 1.8;
+    const silhouetteAlpha = Math.min(0.9, alpha + moonSilhouette * 0.48);
+    const rimAlpha = 0.26 * (1 - moonSilhouette * 0.78);
+    const bodyAlpha = 0.64 + moonSilhouette * 0.32;
+
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.scale(direction * scale, scale);
+    ctx.globalAlpha = silhouetteAlpha;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    // Distant birds are soft silhouettes, with just enough rim light to belong in the moonlit sky.
+    ctx.strokeStyle = `rgba(126, 158, 204, ${rimAlpha})`;
+    ctx.lineWidth = 2.2;
+    this.traceNightBirdPath(wingLift, wingDip);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(2, 5, 14, ${0.78 + moonSilhouette * 0.2})`;
+    ctx.lineWidth = 1.35 + moonSilhouette * 0.35;
+    this.traceNightBirdPath(wingLift, wingDip);
+    ctx.stroke();
+
+    ctx.fillStyle = `rgba(2, 5, 14, ${bodyAlpha})`;
+    ctx.beginPath();
+    ctx.ellipse(0, 1.5, 4.6, 2.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(139, 173, 215, ${0.18 * (1 - moonSilhouette)})`;
+    ctx.beginPath();
+    ctx.arc(direction * 2.3, 0.5, 1.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  private traceNightBirdPath(wingLift: number, wingDip: number): void {
+    const ctx = this.context;
+
+    ctx.beginPath();
+    ctx.moveTo(-1, 1);
+    ctx.quadraticCurveTo(-9, -wingLift, -20, -wingDip);
+    ctx.moveTo(1, 1);
+    ctx.quadraticCurveTo(11, -wingLift * 0.9, 22, -wingDip * 0.78);
   }
 
   private drawSkylineAsset(width: number, height: number): void {
@@ -510,6 +790,111 @@ export class CanvasRenderer {
       targetHeight,
     );
     ctx.restore();
+  }
+
+  private drawMoonRainEffect(snapshot: RenderSnapshot): void {
+    if (!snapshot.isMoonRainActive) {
+      this.moonRainWasActive = false;
+      this.moonRainLastElapsedTime = snapshot.elapsedTime;
+      this.moonRainDrops.length = 0;
+      return;
+    }
+
+    const needsReset =
+      !this.moonRainWasActive ||
+      this.moonRainDrops.length !== this.getMoonRainDropCount() ||
+      this.moonRainDropCanvasSize.width !== this.size.width ||
+      this.moonRainDropCanvasSize.height !== this.size.height;
+
+    if (needsReset) {
+      this.initializeMoonRainDrops();
+    }
+
+    const deltaTime = this.moonRainWasActive
+      ? Math.max(0, Math.min(0.05, snapshot.elapsedTime - this.moonRainLastElapsedTime))
+      : 0;
+
+    this.moonRainWasActive = true;
+    this.moonRainLastElapsedTime = snapshot.elapsedTime;
+    this.updateMoonRainDrops(deltaTime);
+    this.renderMoonRainDrops(snapshot.moonRainProgress);
+  }
+
+  private initializeMoonRainDrops(): void {
+    this.moonRainDrops.length = 0;
+    this.moonRainDropCanvasSize = { ...this.size };
+
+    const dropCount = this.getMoonRainDropCount();
+
+    for (let index = 0; index < dropCount; index += 1) {
+      this.moonRainDrops.push(this.createMoonRainDrop(true));
+    }
+  }
+
+  private updateMoonRainDrops(deltaTime: number): void {
+    const { width, height } = this.size;
+
+    for (const drop of this.moonRainDrops) {
+      drop.x += drop.drift * deltaTime;
+      drop.y += drop.speed * deltaTime;
+
+      if (drop.y - drop.length > height || drop.x < -40 || drop.x > width + 40) {
+        Object.assign(drop, this.createMoonRainDrop(false));
+      }
+    }
+  }
+
+  private renderMoonRainDrops(moonRainProgress: number): void {
+    const ctx = this.context;
+    const eventAlpha = Math.min(1, Math.max(0.22, moonRainProgress + 0.18));
+
+    ctx.save();
+    ctx.lineCap = 'round';
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.shadowColor = 'rgba(242, 236, 190, 0.28)';
+    ctx.shadowBlur = 8;
+
+    for (const drop of this.moonRainDrops) {
+      const alpha = drop.alpha * eventAlpha;
+
+      ctx.strokeStyle = `rgba(232, 244, 255, ${alpha})`;
+      ctx.lineWidth = drop.width;
+      ctx.beginPath();
+      ctx.moveTo(drop.x, drop.y);
+      ctx.lineTo(drop.x - drop.drift * 0.12, drop.y - drop.length);
+      ctx.stroke();
+
+      ctx.fillStyle = `rgba(255, 237, 168, ${alpha * 0.42})`;
+      ctx.beginPath();
+      ctx.arc(drop.x, drop.y, drop.width * 1.25, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  private createMoonRainDrop(initial: boolean): MoonRainDrop {
+    const { width, height } = this.size;
+    const length = this.randomBetween(10, 24);
+    const speed = this.randomBetween(115, 210);
+
+    return {
+      x: this.randomBetween(-24, width + 24),
+      y: initial ? this.randomBetween(-height * 0.15, height) : -length - this.randomBetween(0, 80),
+      length,
+      speed,
+      alpha: this.randomBetween(0.1, 0.24),
+      width: this.randomBetween(0.75, 1.35),
+      drift: this.randomBetween(-14, -4),
+    };
+  }
+
+  private getMoonRainDropCount(): number {
+    const areaBasedCount = Math.round((this.size.width * this.size.height) / 18000);
+    const minCount = this.size.width < 520 ? 30 : 40;
+    const maxCount = this.size.width < 520 ? 44 : 68;
+
+    return Math.max(minCount, Math.min(maxCount, areaBasedCount));
   }
 
   private drawShadowHazard(x: number, y: number, radius: number): void {
@@ -744,6 +1129,73 @@ export class CanvasRenderer {
     ctx.stroke();
   }
 
+  private drawGlowSurgeReward(
+    x: number,
+    y: number,
+    progress: number,
+    feedsBloom: boolean,
+  ): void {
+    const ctx = this.context;
+    const safeProgress = Math.max(0, Math.min(1, progress));
+    const alpha = 1 - safeProgress;
+    const easedProgress = 1 - Math.pow(1 - safeProgress, 3);
+    const innerChargeAlpha = feedsBloom ? 0.58 : 0.72;
+    const maxRadius = feedsBloom ? 78 : 64;
+    const ringRadius = 16 + maxRadius * easedProgress;
+    const coreRadius = 28 + (feedsBloom ? 16 : 8) * (1 - safeProgress);
+    const labelLift = feedsBloom ? 30 : 22;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    const coreGlow = ctx.createRadialGradient(x, y, 0, x, y, coreRadius * 2.8);
+    coreGlow.addColorStop(0, `rgba(255, 249, 190, ${innerChargeAlpha * alpha})`);
+    coreGlow.addColorStop(0.4, `rgba(255, 190, 62, ${0.34 * alpha})`);
+    coreGlow.addColorStop(1, 'rgba(255, 176, 44, 0)');
+
+    ctx.fillStyle = coreGlow;
+    ctx.beginPath();
+    ctx.arc(x, y, coreRadius * 2.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(255, 235, 142, ${0.72 * alpha})`;
+    ctx.lineWidth = Math.max(2, 6 * alpha);
+    ctx.beginPath();
+    ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.strokeStyle = `rgba(255, 252, 215, ${0.46 * alpha})`;
+    ctx.lineWidth = Math.max(1, 2.4 * alpha);
+    ctx.beginPath();
+    ctx.arc(x, y, ringRadius * 0.58, 0, Math.PI * 2);
+    ctx.stroke();
+
+    for (let index = 0; index < 8; index += 1) {
+      const angle = index * (Math.PI / 4) + safeProgress * Math.PI * 0.75;
+      const startRadius = 18 + maxRadius * (1 - easedProgress) * 0.38;
+      const endRadius = ringRadius * 0.86;
+      const startX = x + Math.cos(angle) * startRadius;
+      const startY = y + Math.sin(angle) * startRadius;
+      const endX = x + Math.cos(angle) * endRadius;
+      const endY = y + Math.sin(angle) * endRadius;
+
+      ctx.strokeStyle = `rgba(255, 220, 104, ${0.34 * alpha})`;
+      ctx.lineWidth = Math.max(1, 2.2 * alpha);
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    }
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = `rgba(255, 250, 214, ${0.88 * alpha})`;
+    ctx.font = `900 ${feedsBloom ? 24 : 22}px Inter, system-ui, sans-serif`;
+    ctx.fillText('x2', x, y - labelLift * safeProgress);
+
+    ctx.restore();
+  }
+
   private drawFirefly(
     x: number,
     y: number,
@@ -827,6 +1279,73 @@ export class CanvasRenderer {
     ctx.stroke();
   }
 
+  private drawShadowDrainFeedback(
+    x: number,
+    y: number,
+    fireflyRadius: number,
+    elapsedTime: number,
+    isTouchingShadow: boolean,
+    shadowHitFlash: number,
+  ): void {
+    const intensity = Math.max(shadowHitFlash, isTouchingShadow ? 0.78 : 0);
+
+    if (intensity <= 0) {
+      return;
+    }
+
+    const ctx = this.context;
+    const pulse = 1 + Math.sin(elapsedTime * 22) * 0.08;
+    const haloRadius = fireflyRadius * (6.2 + shadowHitFlash * 1.5) * pulse;
+    const ringRadius = fireflyRadius * (2.7 + (1 - shadowHitFlash) * 1.7);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+
+    const halo = ctx.createRadialGradient(x, y, fireflyRadius * 0.9, x, y, haloRadius);
+    halo.addColorStop(0, `rgba(255, 91, 121, ${0.22 * intensity})`);
+    halo.addColorStop(0.34, `rgba(147, 61, 180, ${this.shadowDrainHaloAlpha * intensity})`);
+    halo.addColorStop(1, 'rgba(147, 61, 180, 0)');
+
+    ctx.fillStyle = halo;
+    ctx.beginPath();
+    ctx.arc(x, y, haloRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(255, 93, 128, ${this.shadowDrainRingAlpha * intensity})`;
+    ctx.lineWidth = Math.max(1.25, fireflyRadius * 0.22 * intensity);
+    ctx.beginPath();
+    ctx.arc(x, y, ringRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(198, 91, 221, ${0.45 * intensity})`;
+    ctx.lineWidth = Math.max(1, fireflyRadius * 0.14);
+    ctx.lineCap = 'round';
+
+    for (let index = 0; index < 7; index += 1) {
+      const angle = elapsedTime * 2.8 + index * ((Math.PI * 2) / 7);
+      const wobble = Math.sin(elapsedTime * 15 + index) * fireflyRadius * 0.34;
+      const outerRadius = fireflyRadius * 4.4 + wobble;
+      const innerRadius = fireflyRadius * 2.55;
+      const startX = x + Math.cos(angle) * outerRadius;
+      const startY = y + Math.sin(angle) * outerRadius;
+      const endX = x + Math.cos(angle + 0.16) * innerRadius;
+      const endY = y + Math.sin(angle + 0.16) * innerRadius;
+
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.quadraticCurveTo(
+        x + Math.cos(angle + 0.28) * fireflyRadius * 3.25,
+        y + Math.sin(angle - 0.28) * fireflyRadius * 3.25,
+        endX,
+        endY,
+      );
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
   private drawBloomBurstLabel(x: number, y: number, progress: number): void {
     const ctx = this.context;
     const alpha = Math.max(0, 1 - progress);
@@ -881,6 +1400,12 @@ export class CanvasRenderer {
     }
 
     this.drawPlayingHud(snapshot);
+
+    if (snapshot.state === 'paused') {
+      this.drawPauseOverlay(centerX, centerY);
+      return;
+    }
+
     this.drawLevelUpMessage(
       snapshot.nightLevel,
       snapshot.moonPhaseName,
@@ -894,6 +1419,92 @@ export class CanvasRenderer {
       centerX,
       height,
     );
+  }
+
+  private drawPauseOverlay(centerX: number, centerY: number): void {
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const panelWidth = Math.min(width - 32, 390);
+    const panelHeight = width < 420 ? 202 : 216;
+    const panelX = centerX - panelWidth / 2;
+    const panelY = centerY - panelHeight / 2;
+    const buttonWidth = Math.min(168, panelWidth - 72);
+    const buttonHeight = 38;
+    const buttonX = centerX - buttonWidth / 2;
+    const buttonY = panelY + panelHeight - 74;
+    const crescentY = panelY + 44;
+    const titleY = panelY + 88;
+    const subtitleY = panelY + 118;
+    const helperY = panelY + panelHeight - 22;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(2, 5, 14, 0.5)';
+    ctx.fillRect(0, 0, width, height);
+
+    const panelGradient = ctx.createLinearGradient(0, panelY, 0, panelY + panelHeight);
+    panelGradient.addColorStop(0, 'rgba(8, 16, 34, 0.9)');
+    panelGradient.addColorStop(1, 'rgba(5, 9, 20, 0.82)');
+
+    this.drawPanelRect(
+      panelX,
+      panelY,
+      panelWidth,
+      panelHeight,
+      16,
+      panelGradient,
+      'rgba(255, 236, 174, 0.24)',
+      18,
+    );
+
+    this.drawPauseCrescent(centerX, crescentY);
+
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#fff0b8';
+    this.setFittedFont('700', 25, 20, 'Your firefly is waiting', panelWidth - 40);
+    ctx.fillText('Your firefly is waiting', centerX, titleY);
+
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.74)';
+    this.setFittedFont('400', 14, 12, 'The night is holding still for you.', panelWidth - 46);
+    ctx.fillText('The night is holding still for you.', centerX, subtitleY);
+
+    const buttonGradient = ctx.createLinearGradient(0, buttonY, 0, buttonY + buttonHeight);
+    buttonGradient.addColorStop(0, 'rgba(255, 232, 151, 0.96)');
+    buttonGradient.addColorStop(1, 'rgba(226, 174, 75, 0.96)');
+
+    ctx.shadowColor = 'rgba(255, 224, 122, 0.18)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = buttonGradient;
+    this.traceRoundedRect(buttonX, buttonY, buttonWidth, buttonHeight, buttonHeight / 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = 'rgba(255, 255, 230, 0.34)';
+    ctx.stroke();
+
+    ctx.fillStyle = '#162038';
+    this.setFittedFont('800', 17, 15, 'Resume', buttonWidth - 32);
+    ctx.fillText('Resume', centerX, buttonY + buttonHeight / 2);
+
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.58)';
+    this.setFittedFont('400', 12, 11, 'Click or tap anywhere to continue.', panelWidth - 46);
+    ctx.fillText('Click or tap anywhere to continue.', centerX, helperY);
+    ctx.restore();
+  }
+
+  private drawPauseCrescent(x: number, y: number): void {
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.fillStyle = 'rgba(255, 232, 150, 0.94)';
+    ctx.beginPath();
+    ctx.arc(x, y, 8, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.globalCompositeOperation = 'destination-out';
+    ctx.beginPath();
+    ctx.arc(x + 4.4, y - 1.4, 8.3, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   private drawPlayingHud(snapshot: RenderSnapshot): void {
@@ -1142,17 +1753,18 @@ export class CanvasRenderer {
     const ctx = this.context;
     const right = x + width;
     const bottom = y + height;
+    const safeRadius = Math.max(0, Math.min(radius, width / 2, height / 2));
 
     ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(right - radius, y);
-    ctx.quadraticCurveTo(right, y, right, y + radius);
-    ctx.lineTo(right, bottom - radius);
-    ctx.quadraticCurveTo(right, bottom, right - radius, bottom);
-    ctx.lineTo(x + radius, bottom);
-    ctx.quadraticCurveTo(x, bottom, x, bottom - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.moveTo(x + safeRadius, y);
+    ctx.lineTo(right - safeRadius, y);
+    ctx.quadraticCurveTo(right, y, right, y + safeRadius);
+    ctx.lineTo(right, bottom - safeRadius);
+    ctx.quadraticCurveTo(right, bottom, right - safeRadius, bottom);
+    ctx.lineTo(x + safeRadius, bottom);
+    ctx.quadraticCurveTo(x, bottom, x, bottom - safeRadius);
+    ctx.lineTo(x, y + safeRadius);
+    ctx.quadraticCurveTo(x, y, x + safeRadius, y);
     ctx.closePath();
   }
 
@@ -1259,5 +1871,9 @@ export class CanvasRenderer {
       fontSize -= 1;
       ctx.font = `${weight} ${fontSize}px Inter, system-ui, sans-serif`;
     }
+  }
+
+  private randomBetween(min: number, max: number): number {
+    return min + Math.random() * (max - min);
   }
 }

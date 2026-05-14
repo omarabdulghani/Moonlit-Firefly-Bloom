@@ -1,4 +1,4 @@
-export type GameState = 'start' | 'playing' | 'gameOver';
+export type GameState = 'start' | 'playing' | 'paused' | 'gameOver';
 
 export type MoonPhaseName =
   | 'New Moon'
@@ -51,6 +51,13 @@ export type BloomBurstSnapshot = {
   y: number;
   progress: number;
   radius: number;
+};
+
+export type GlowSurgeRewardSnapshot = {
+  x: number;
+  y: number;
+  progress: number;
+  feedsBloom: boolean;
 };
 
 export type MoonShieldPowerupSnapshot = {
@@ -112,6 +119,7 @@ export type RenderSnapshot = {
   moonDashDuration: number;
   temporaryHudMessage: TemporaryHudMessageSnapshot | null;
   bloomBurst: BloomBurstSnapshot | null;
+  glowSurgeReward: GlowSurgeRewardSnapshot | null;
   moonShieldPowerup: MoonShieldPowerupSnapshot | null;
   powerups: PowerupSnapshot[];
   firefly: FireflySnapshot | null;

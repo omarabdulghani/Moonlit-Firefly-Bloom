@@ -4,33 +4,37 @@
 
 ## Core Fantasy
 
-The player is a tiny glowing firefly drifting through a dark rooftop garden under moonlight. Every movement brings a little life back to the space: moonlight refills the firefly's glow, flowers bloom in its wake, and shadows threaten to dim the magic.
+The player is a tiny glowing firefly drifting across a dark rooftop under the moon. Moonlight keeps the firefly alive, shadows try to drain its glow, and rare powerups create small magical turns in the run.
+
+The mood should be cozy, lonely in a comforting way, and slightly tense when the glow gets low.
 
 ## First 10 Seconds
 
 - The player appears as a small warm glow in a dark garden arena.
 - A few moonlight orbs shimmer nearby.
 - One or two shadow hazards are visible but not overwhelming.
-- The player moves, immediately sees the firefly respond, and leaves small flowers or bloom marks behind.
-- Collecting an orb gives a clear visual pulse and score feedback.
+- The player moves, immediately sees the firefly respond, and understands that light is fuel.
+- Collecting an orb gives sound, score, glow restore, and a clear visual response.
+- Shadows look dangerous, and touching them creates immediate visual drain feedback.
 
 ## First 60 Seconds
 
 - The player learns the main loop by doing: move, collect, avoid, bloom.
 - The glow meter slowly becomes meaningful as shadow contact drains it.
 - Moonlight orbs encourage movement around the arena.
-- Bloom coverage grows visibly, making each run feel like it leaves a beautiful trace.
-- Hazards should feel avoidable, not random or punishing.
+- Bloom Burst teaches the player that staying bright can create a rewarding moment.
+- Moon Shield, Moon Dash, and Glow Surge/x2 add occasional pickup excitement.
+- Hazards should feel avoidable, dangerous, and recoverable rather than random or punishing.
 
 ## 3-Minute Gameplay Loop
 
 1. Start or retry instantly.
 2. Fly through the garden collecting moonlight.
-3. Avoid shadows while trying to bloom more of the arena.
-4. Use moonlight pickups to restore glow and extend the run.
-5. Chase a better score and more satisfying bloom coverage.
+3. Avoid shadows while managing the glow meter.
+4. Use moonlight and powerups to recover, move faster, or trigger Bloom Burst.
+5. Survive deeper Night Levels and later Full Moon/Moon Rain moments.
 6. Lose when glow reaches zero.
-7. See final score and best score.
+7. See final score, best score, orbs collected, Bloom Bursts, deepest Night, and Full Moons survived.
 8. Retry immediately.
 
 ## Player Actions
@@ -38,7 +42,9 @@ The player is a tiny glowing firefly drifting through a dark rooftop garden unde
 - Move the firefly.
 - Collect moonlight orbs.
 - Steer away from shadow hazards.
-- Bloom the garden by moving through unbloomed space.
+- Collect special powerups when they appear.
+- Use Bloom Burst windows to push shadows away and score bonus points.
+- Pause/resume naturally when leaving the browser or pressing `Esc`.
 - Restart after game over.
 
 The MVP should not require shooting, menus, inventory, upgrades, or complex decisions.
@@ -48,8 +54,9 @@ The MVP should not require shooting, menus, inventory, upgrades, or complex deci
 MVP scoring should be simple and readable:
 
 - Moonlight collected adds points.
-- Blooming new garden space adds points.
-- Surviving longer may add a small score bonus if it does not distract from collection and blooming.
+- Bloom Burst adds a small bonus score when triggered at high/full glow.
+- Powerups do not add separate score except through their normal effects.
+- There is no combo multiplier, survival-time scoring, or permanent progression scoring.
 
 The score should reward active, graceful movement rather than waiting.
 
@@ -59,15 +66,35 @@ The firefly has a glow meter. Touching shadows drains glow. Collecting moonlight
 
 Glow meter damage is preferred over instant death because it supports the cozy tone, gives the player room to recover, and makes mistakes feel tense without feeling harsh.
 
+The low-glow heartbeat warning should stop immediately once the player restores enough glow.
+
+## Current Powerups
+
+- Moon Shield: temporary protection from shadow damage and passive glow drain.
+- Moon Dash: temporary speed boost with a green electric identity.
+- Glow Surge/x2: gold pickup that restores a large amount of glow and can trigger Bloom Burst when collected with enough existing glow.
+
+Powerups are temporary run-only pickups. They are not upgrades, inventory items, shop items, or permanent progression.
+
+## Special Events
+
+- Night Level rises through Bloom Burst progress and gradually increases pressure.
+- The moon phase changes with Night Level.
+- Later Full Moons can trigger Moon Rain.
+- Moon Rain temporarily adds more moonlight orbs, slightly increases shadow pressure, plays ambience, and shows subtle falling moonlight.
+
+These systems should make runs feel alive without becoming a separate mode.
+
 ## Replayability
 
 Replayability comes from:
 
 - Better movement mastery.
 - Higher scores.
-- More bloom coverage.
 - Cleaner shadow avoidance.
 - Fast restarts.
+- Better powerup decisions.
+- Reaching deeper Nights and surviving Full Moon events.
 - A saved local best score.
 
 Progression systems are intentionally out of scope for the MVP.
@@ -78,29 +105,43 @@ Progression systems are intentionally out of scope for the MVP.
 - Deep night background with readable play space.
 - Warm firefly glow as the player focus.
 - Cool moonlight orbs.
-- Soft flower blooms along the path.
 - Shadow hazards should be dark, legible, and visually distinct from the background.
+- Powerups should be visually distinct: shield blue, dash green, x2 gold.
+- Ambient birds, stars, and shooting stars should support the mood without distracting from gameplay.
 - UI should be minimal and calm.
 
 The visuals should be atmospheric but never obscure gameplay readability.
 
 ## Sound and Feedback Direction
 
-Sound can be added after the core loop works. Direction:
+Current sound direction:
 
 - Gentle collection chime for moonlight.
-- Soft bloom sparkle or petal sound.
-- Low, quiet warning sound for shadow contact.
+- Distinct pickup sounds for Moon Shield, Moon Dash, and Glow Surge.
+- Bloom Burst reward sound.
+- Shadow damage sound.
+- Low-glow heartbeat warning that stops when glow recovers.
+- Moon Rain begin/end sounds and quiet ambience during the event.
 - Calm game over sound.
-- Subtle ambient night loop if time allows.
 
 Visual feedback should come first because the MVP must work even muted.
+
+## Pause and Resume
+
+The game pauses when:
+
+- The player presses `Esc`.
+- The browser loses focus.
+- The tab becomes hidden.
+- The page is being hidden by the browser.
+
+Resume should feel gentle and personal: the firefly is waiting, the night is holding still, and gameplay timers should not continue draining glow while paused.
 
 ## Risks
 
 - Movement may feel too floaty or too stiff.
-- Bloom trail rendering could become noisy or expensive.
 - Shadows could feel unfair on small screens.
-- The arena could feel empty without enough visual feedback.
+- The arena could feel too busy if ambient birds, stars, Moon Rain, and reward effects become too visible.
 - The game could become overbuilt before the core loop is fun.
 - Mobile controls could lag behind desktop unless tested early.
+- Powerups could become too generous before the base loop proves itself.

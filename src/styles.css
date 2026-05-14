@@ -38,3 +38,13 @@ body {
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
+
+@media (hover: hover) and (pointer: fine) {
+  body.game-is-playing #game-canvas {
+    cursor: none;
+  }
+
+  body.game-is-playing.game-cursor-visible #game-canvas {
+    cursor: default;
+  }
+}

@@ -4,6 +4,22 @@
 
 Small, checkable tasks for building the Moonlit Firefly Bloom MVP.
 
+## Current Standing
+
+- [x] Local browser prototype is playable.
+- [x] Desktop keyboard, desktop mouse, and mobile touch controls exist.
+- [x] Core loop includes moonlight collection, shadow avoidance, glow management, powerups, Bloom Burst, Night progression, Moon Rain, sound, pause/resume, and local best score.
+- [x] Current focus is core fun, readability, and private playtesting.
+- [ ] Backend, accounts, online leaderboard, shops, ads, payments, achievements, permanent upgrades, PWA setup, and app packaging remain intentionally unbuilt.
+
+## Next Recommended Work
+
+- [ ] Private playtest the current build with a small tester group.
+- [ ] Watch whether players understand glow, shadows, Bloom Burst, and powerups without explanation.
+- [ ] Tune powerup frequency, shadow pressure, and glow pacing only after playtest observations.
+- [ ] QA pause/resume, tab switching, cursor behavior, and low-glow audio on desktop browsers.
+- [ ] Consider a tiny mute/settings option later if sound feedback is stable and testers ask for it.
+
 ## Phase 0: Project Setup and Docs
 
 - [x] Create `README.md`.
@@ -284,6 +300,16 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Preserve normal scoring, Bloom Burst, Moon Shield, Night Level, input, and restart behavior.
 - [x] Avoid ads, upgrades, monetization, new enemy types, new powerups, sound, menus, and particle systems.
 
+## Phase 10.3: Moon Rain Visual Effect
+
+- [x] Render subtle falling moonlight only while Moon Rain is active.
+- [x] Keep Moon Rain streaks behind gameplay objects and HUD.
+- [x] Scale drop count for desktop and mobile canvas sizes.
+- [x] Recycle lightweight code-drawn drops without adding a heavy particle system.
+- [x] Stop the visual effect when Moon Rain ends.
+- [x] Preserve Moon Rain duration, extra orb count, shadow speed behavior, scoring, sounds, powerups, HUD, controls, and background placement.
+- [x] Avoid new mechanics, powerups, enemies, sounds, menus, upgrades, monetization, PWA, and app packaging.
+
 ## Phase 11: Essential Sound Effects
 
 - [x] Copy WAV files into a Vite public sound path with clean runtime names.
@@ -344,3 +370,50 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Keep `x2` large, clean, and readable.
 - [x] Preserve all gameplay, powerup behavior, sounds, HUD logic, orb behavior, background, and controls.
 - [x] Avoid new systems, menus, assets, sounds, upgrades, monetization, PWA, and app packaging.
+
+## Phase 12.4: Desktop Cursor and Low-Glow Audio Cleanup
+
+- [x] Hide the mouse cursor during active desktop play.
+- [x] Reveal the cursor briefly when the player moves the mouse or clicks.
+- [x] Keep touch/mobile behavior unaffected by cursor hiding.
+- [x] Stop the low-glow heartbeat warning immediately when glow recovers above the warning threshold.
+- [x] Stop the low-glow warning on pause, game over, and restart.
+- [x] Preserve gameplay tuning, scoring, powerups, background, and mobile controls.
+
+## Phase 12.5: Shield Drain Protection and Shadow Hit Drama
+
+- [x] Make Moon Shield pause passive glow drain while active.
+- [x] Keep Moon Shield preventing shadow damage while active.
+- [x] Add stronger shadow-contact visual feedback with a local danger halo, ring, and inward drain lines.
+- [x] Keep the effect brief, readable, and not horror-themed.
+- [x] Preserve shadow damage values, passive drain values, scoring, powerups, and core loop tuning.
+
+## Phase 12.6: Glow Surge Reward Visual
+
+- [x] Add a stronger visual reward when collecting Glow Surge/x2.
+- [x] Render the x2 reward as a gold surge with readable light accents.
+- [x] Layer the x2 surge cleanly with Bloom Burst when both trigger together.
+- [x] Keep Glow Surge sound, glow behavior, Bloom Burst behavior, and scoring unchanged.
+- [x] Avoid new systems, powerups, menus, particles-heavy effects, and monetization.
+
+## Phase 12.7: Ambient Night Sky Polish
+
+- [x] Add code-drawn ambient night birds in the background.
+- [x] Give birds organic movement, small flap variation, and occasional silhouettes across the moon.
+- [x] Add more stars and subtle twinkling.
+- [x] Add rare shooting star/falling star effects.
+- [x] Keep all sky atmosphere behind gameplay and low-distraction.
+- [x] Preserve gameplay, input, scoring, powerups, sounds, HUD, and game over behavior.
+
+## Phase 12.8: Pause and Resume Flow
+
+- [x] Add a real `paused` game state.
+- [x] Pause active runs when pressing `Esc`.
+- [x] Pause active runs when the browser loses focus, the page hides, or the tab becomes hidden.
+- [x] Freeze gameplay timers and glow drain while paused.
+- [x] Stop low-glow warning and Moon Rain ambience while paused.
+- [x] Resume by clicking or tapping the pause overlay.
+- [x] Clear stale input on pause/resume so resuming does not instantly end the run.
+- [x] Add a calm in-world pause overlay with a crescent icon and personal copy.
+- [x] Fix pause overlay shape/padding so it fits the game aesthetic.
+- [x] Preserve gameplay systems, powerups, sound mappings, scoring, and restart flow.

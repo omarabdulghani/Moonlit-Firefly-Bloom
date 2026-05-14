@@ -1,14 +1,39 @@
 # Moonlit Firefly Bloom
 
-Moonlit Firefly Bloom is a cozy browser-first arcade game about guiding a tiny glowing firefly through a dark rooftop garden, collecting moonlight, avoiding creeping shadows, and leaving soft blooming flowers behind your path. The game should feel simple, magical, readable, and replayable: fly, gather light, bloom the garden, survive a little longer, and instantly try again.
+Moonlit Firefly Bloom is a cozy browser-first arcade game about guiding a tiny glowing firefly across a moonlit rooftop, collecting light, avoiding creeping shadows, and surviving deeper into the night.
+
+The game should feel simple, magical, readable, and replayable: fly, gather light, stay glowing, trigger satisfying Bloom moments, survive a little longer, and instantly try again.
 
 ## Current Status
 
-Planning and documentation foundation. Gameplay code has not been started yet.
+Local playable prototype.
+
+Implemented:
+
+- Responsive canvas game.
+- Start, playing, paused, and game over states.
+- Keyboard, mouse/pointer, and touch movement.
+- Moonlight orbs with scoring, glow restore, lifetime, and respawn behavior.
+- Shadow hazards that drain glow and trigger stronger danger feedback.
+- Passive glow drain, low-glow warning audio, and local best score.
+- Bloom Burst reward moments at high/full glow.
+- Night Level escalation, moon phase cycle, and Moon Rain event.
+- Moon Shield, Moon Dash, and Glow Surge/x2 powerups.
+- Powerup sounds, shadow damage sound, Moon Rain ambience, and other core sound effects.
+- Rooftop background assets, animated night birds, additional stars, and occasional shooting stars.
+- Pause/resume flow through `Esc`, browser blur, tab switching, and page visibility changes.
+
+Still not implemented:
+
+- Accounts.
+- Backend.
+- Online leaderboard.
+- Shops, upgrades, ads, monetization, or achievements.
+- Settings/menu systems beyond the current start, pause, and game over overlays.
 
 ## How to Run Locally
 
-The intended stack is Vite, TypeScript, HTML Canvas, and CSS. Once the project is scaffolded:
+The project uses Vite, TypeScript, HTML Canvas, and CSS.
 
 ```bash
 npm install
@@ -17,12 +42,21 @@ npm run dev
 
 Then open the local Vite URL in a browser.
 
+To check a production-style build:
+
+```bash
+npm run build
+npm run preview
+```
+
 ## Core Controls
 
 - Desktop keyboard: move with `WASD` or arrow keys.
-- Desktop pointer: optional mouse-follow movement if it feels better during prototyping.
+- Desktop pointer: move the firefly with the mouse.
+- Pause: press `Esc`, switch tabs, or leave the browser window.
+- Resume: click or tap the resume prompt.
 - Mobile: touch and drag to guide the firefly.
-- Restart: quick retry button on the game over screen.
+- Restart: click or tap the game over prompt.
 
 Controls should be easy to understand without a tutorial.
 
@@ -30,9 +64,20 @@ Controls should be easy to understand without a tutorial.
 
 Answer one question quickly:
 
-> Is it fun to fly around, collect light, avoid shadows, bloom flowers, and instantly retry?
+> Is it fun to fly around, collect light, avoid shadows, trigger satisfying glow rewards, and instantly retry?
 
-The MVP is complete when the player can start a run, move smoothly, collect moonlight, leave blooms behind, lose glow from shadows, recover glow from light, reach game over, see a score, save a best score locally, and immediately retry.
+The local prototype now answers most of the technical MVP questions. The next main question is fun: whether private testers want another run after learning the core loop.
+
+## Where We Stand
+
+The project is currently in core-feel polish. The latest work focused on stronger shadow damage feedback, clearer powerup rewards, ambient sky life, pause/resume behavior, and making the rooftop scene feel more alive without adding long-term systems.
+
+Recommended next work:
+
+- Private playtest the current loop.
+- Tune powerup frequency and difficulty only after observing play.
+- QA pause/resume, browser tab switching, and audio behavior.
+- Consider a simple settings/mute option later, but do not add it until the core feel is stable.
 
 ## Development Philosophy
 
