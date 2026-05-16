@@ -1,4 +1,10 @@
-import type { CanvasSize, HudMessageKind, PowerupType, RenderSnapshot } from '../game/types';
+import type {
+  CanvasSize,
+  HudMessageKind,
+  PowerupType,
+  RenderSnapshot,
+  VirtualJoystickSnapshot,
+} from '../game/types';
 
 type BackgroundAssetName = 'skyline' | 'railing' | 'plantLeft' | 'plantRight';
 
@@ -254,6 +260,10 @@ export class CanvasRenderer {
 
     this.drawShadowHitVignette(snapshot.shadowHitFlash);
     this.drawStateText(snapshot);
+
+    if (snapshot.virtualJoystick) {
+      this.drawVirtualJoystick(snapshot.virtualJoystick);
+    }
   }
 
   private clear(): void {
@@ -1375,6 +1385,66 @@ export class CanvasRenderer {
 
     ctx.fillStyle = vignette;
     ctx.fillRect(0, 0, width, height);
+  }
+
+  private drawVirtualJoystick(joystick: VirtualJoystickSnapshot): void {
+    if (!joystick.visible) {
+      return;
+    }
+
+    const ctx = this.context;
+    const baseAlpha = joystick.active ? 0.26 : 0.16;
+    const knobAlpha = joystick.active ? 0.48 : 0.28;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'source-over';
+
+    const baseGlow = ctx.createRadialGradient(
+      joystick.baseX,
+      joystick.baseY,
+      joystick.baseRadius * 0.25,
+      joystick.baseX,
+      joystick.baseY,
+      joystick.baseRadius * 1.1,
+    );
+    baseGlow.addColorStop(0, `rgba(232, 244, 255, ${baseAlpha * 0.48})`);
+    baseGlow.addColorStop(0.7, `rgba(108, 154, 196, ${baseAlpha})`);
+    baseGlow.addColorStop(1, 'rgba(108, 154, 196, 0)');
+
+    ctx.fillStyle = baseGlow;
+    ctx.beginPath();
+    ctx.arc(joystick.baseX, joystick.baseY, joystick.baseRadius * 1.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = `rgba(225, 242, 255, ${baseAlpha + 0.12})`;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(joystick.baseX, joystick.baseY, joystick.baseRadius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    const knobGlow = ctx.createRadialGradient(
+      joystick.knobX,
+      joystick.knobY,
+      0,
+      joystick.knobX,
+      joystick.knobY,
+      joystick.knobRadius * 2.2,
+    );
+    knobGlow.addColorStop(0, `rgba(248, 253, 255, ${knobAlpha + 0.18})`);
+    knobGlow.addColorStop(0.55, `rgba(154, 213, 238, ${knobAlpha})`);
+    knobGlow.addColorStop(1, 'rgba(154, 213, 238, 0)');
+
+    ctx.fillStyle = knobGlow;
+    ctx.beginPath();
+    ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = `rgba(225, 248, 255, ${knobAlpha + 0.18})`;
+    ctx.beginPath();
+    ctx.arc(joystick.knobX, joystick.knobY, joystick.knobRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
   }
 
   private drawStateText(snapshot: RenderSnapshot): void {

@@ -35,22 +35,28 @@ const revealGameplayCursor = () => {
 
 const game = new Game(renderer, input, audio, (state) => {
   isPlaying = state === 'playing';
+  input.setGameState(state);
   document.body.classList.toggle('game-is-playing', isPlaying);
   hideGameplayCursor();
 });
 
-const unlockAudio = () => {
-  void audio.unlock();
+const primePointerAudio = (event: Event) => {
+  game.primeAudioFromUserGesture(event.type);
+};
+
+const unlockAudio = (source: string) => {
+  audio.unlockFromUserGesture(source);
 };
 
 const pauseGame = () => {
   game.pause();
 };
 
-window.addEventListener('pointerdown', unlockAudio, { passive: true });
-window.addEventListener('touchstart', unlockAudio, { passive: true });
+window.addEventListener('pointerdown', primePointerAudio, { passive: true, capture: true });
+window.addEventListener('touchstart', primePointerAudio, { passive: true, capture: true });
+window.addEventListener('click', primePointerAudio, { passive: true, capture: true });
 window.addEventListener('keydown', (event) => {
-  unlockAudio();
+  unlockAudio(event.type);
 
   if (event.key === 'Escape') {
     event.preventDefault();
@@ -75,6 +81,7 @@ const getViewportSize = () => ({
 const resize = () => {
   const viewport = getViewportSize();
   renderer.resize(viewport.width, viewport.height, window.devicePixelRatio || 1);
+  audio.setMobileMix(viewport.width <= 600 || Math.min(viewport.width, viewport.height) <= 500);
 };
 
 window.addEventListener('resize', resize);

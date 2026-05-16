@@ -13,6 +13,7 @@ Implemented:
 - Responsive canvas game.
 - Start, playing, paused, and game over states.
 - Keyboard, mouse/pointer, and touch movement.
+- Mobile virtual joystick for phone/narrow screens.
 - Moonlight orbs with scoring, glow restore, lifetime, and respawn behavior.
 - Shadow hazards that drain glow and trigger stronger danger feedback.
 - Passive glow drain, low-glow warning audio, and local best score.
@@ -20,6 +21,7 @@ Implemented:
 - Night Level escalation, moon phase cycle, and Moon Rain event.
 - Moon Shield, Moon Dash, and Glow Surge/x2 powerups.
 - Powerup sounds, shadow damage sound, Moon Rain ambience, and other core sound effects.
+- Manually approved runtime audio using M4A primary and MP3 fallback files.
 - Rooftop background assets, animated night birds, additional stars, and occasional shooting stars.
 - Pause/resume flow through `Esc`, browser blur, tab switching, and page visibility changes.
 
@@ -55,7 +57,7 @@ npm run preview
 - Desktop pointer: move the firefly with the mouse.
 - Pause: press `Esc`, switch tabs, or leave the browser window.
 - Resume: click or tap the resume prompt.
-- Mobile: touch and drag to guide the firefly.
+- Mobile: use the bottom-left virtual joystick on phone/narrow screens.
 - Restart: click or tap the game over prompt.
 
 Controls should be easy to understand without a tutorial.
@@ -70,13 +72,13 @@ The local prototype now answers most of the technical MVP questions. The next ma
 
 ## Where We Stand
 
-The project is currently in core-feel polish. The latest work focused on stronger shadow damage feedback, clearer powerup rewards, ambient sky life, pause/resume behavior, and making the rooftop scene feel more alive without adding long-term systems.
+The project is currently ready for focused private playtesting. The latest work stabilized mobile audio playback, switched runtime audio to Omar-approved M4A/MP3 files, refined mobile controls with a virtual joystick, and kept the rooftop scene atmospheric without adding long-term systems.
 
 Recommended next work:
 
 - Private playtest the current loop.
 - Tune powerup frequency and difficulty only after observing play.
-- QA pause/resume, browser tab switching, and audio behavior.
+- QA pause/resume, browser tab switching, mobile joystick feel, and audio behavior on real phones.
 - Consider a simple settings/mute option later, but do not add it until the core feel is stable.
 
 ## Development Philosophy

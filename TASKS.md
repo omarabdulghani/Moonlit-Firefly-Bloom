@@ -7,9 +7,9 @@ Small, checkable tasks for building the Moonlit Firefly Bloom MVP.
 ## Current Standing
 
 - [x] Local browser prototype is playable.
-- [x] Desktop keyboard, desktop mouse, and mobile touch controls exist.
+- [x] Desktop keyboard, desktop mouse, mobile touch controls, and phone/narrow virtual joystick exist.
 - [x] Core loop includes moonlight collection, shadow avoidance, glow management, powerups, Bloom Burst, Night progression, Moon Rain, sound, pause/resume, and local best score.
-- [x] Current focus is core fun, readability, and private playtesting.
+- [x] Current focus is core fun, readability, real-device QA, and private playtesting.
 - [ ] Backend, accounts, online leaderboard, shops, ads, payments, achievements, permanent upgrades, PWA setup, and app packaging remain intentionally unbuilt.
 
 ## Next Recommended Work
@@ -17,7 +17,7 @@ Small, checkable tasks for building the Moonlit Firefly Bloom MVP.
 - [ ] Private playtest the current build with a small tester group.
 - [ ] Watch whether players understand glow, shadows, Bloom Burst, and powerups without explanation.
 - [ ] Tune powerup frequency, shadow pressure, and glow pacing only after playtest observations.
-- [ ] QA pause/resume, tab switching, cursor behavior, and low-glow audio on desktop browsers.
+- [ ] QA pause/resume, tab switching, cursor behavior, mobile joystick feel, and runtime audio on real devices.
 - [ ] Consider a tiny mute/settings option later if sound feedback is stable and testers ask for it.
 
 ## Phase 0: Project Setup and Docs
@@ -425,3 +425,119 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Add clearer breathing room between the helper text and Resume button.
 - [x] Match the bottom padding under the helper text more closely to the top padding above the crescent.
 - [x] Preserve pause/resume behavior, gameplay timers, audio behavior, controls, and all gameplay systems.
+
+## Phase 13: Mobile Playability and Audio Stability
+
+- [x] Replace clone-per-play audio with a Web Audio buffer path after player interaction.
+- [x] Resume/unlock audio only after a user gesture and fail silently if playback is blocked.
+- [x] Decode and reuse audio buffers instead of decoding sounds at pickup time.
+- [x] Keep cooldowns and instance caps for frequent sounds.
+- [x] Lower the mobile audio mix slightly for phone-sized screens.
+- [x] Document that compressed mp3/m4a exports are recommended for production mobile audio.
+- [x] Add a canvas-size responsive density profile for phone, tablet, and desktop.
+- [x] Reduce normal moonlight orb count on phone-sized screens.
+- [x] Reduce Moon Rain extra orb count on phone-sized screens.
+- [x] Reduce base and maximum shadow counts on phone-sized screens.
+- [x] Limit active special powerups on phone/tablet-sized screens.
+- [x] Slightly reduce rendered orb, shadow, and powerup sizes on smaller screens.
+- [x] Add a bottom-left virtual joystick for touch/narrow play.
+- [x] Keep keyboard, mouse, direct pointer fallback, scoring, powerups, Moon Rain, and restart behavior intact.
+- [x] Avoid settings screens, menus, ads, leaderboard, shop, monetization, PWA, Capacitor, and app-store packaging.
+
+## Phase 13.1: Calm Start and Responsive Spawn Tuning
+
+- [x] Add a short start grace period so shadows cannot drain glow immediately.
+- [x] Increase the safe shadow spawn radius around the firefly at run start.
+- [x] Reduce phone shadow density further while preserving desktop challenge.
+- [x] Reduce phone object visual scale slightly for readability.
+- [x] Make moonlight orb spawn distance responsive to screen size.
+- [x] Prefer reachable orb positions without spawning directly on the firefly.
+- [x] Avoid spawning moonlight orbs directly inside shadows where possible.
+- [x] Keep powerup spawn avoidance and active-count limits intact for small screens.
+- [x] Document the calming/wind-down positioning.
+- [x] Document the moving rare reward powerup as a future idea only.
+- [x] Avoid new mechanics, menus, shops, ads, leaderboard, monetization, PWA, Capacitor, and app-store packaging.
+
+## Phase 13.2: Mobile Joystick Feel and Start Sound Fix
+
+- [x] Add a mobile-only joystick speed multiplier for calmer phone movement.
+- [x] Keep desktop keyboard, mouse, and pointer movement unchanged.
+- [x] Preserve Moon Dash as a noticeably faster temporary speed boost.
+- [x] Reuse the in-progress audio unlock promise so mobile start audio waits for the first tap unlock.
+- [x] Play the start/retry sound after audio unlock completes.
+- [x] Guard against double-starting or double-playing the start sound on rapid taps.
+- [x] Preserve all scoring, spawning, powerups, HUD, background, and game over behavior.
+- [x] Avoid new systems, menus, ads, leaderboard, monetization, PWA, Capacitor, and app-store packaging.
+
+## Phase 14: Legal/IP Documentation Setup
+
+- [x] Create a `legal/` folder for practical internal IP and release-readiness records.
+- [x] Add `legal/README.md` with purpose, non-legal-advice note, and proof-keeping reminders.
+- [x] Add `legal/AUDIO_ASSET_LOG.md` with Suno sound placeholder entries.
+- [x] Add `legal/VISUAL_ASSET_LOG.md` with known background asset placeholder entries.
+- [x] Add `legal/AI_TOOL_USAGE_LOG.md` for high-level AI-assisted code, audio, and visual asset usage.
+- [x] Add `legal/THIRD_PARTY_LICENSES.md` for package license tracking.
+- [x] Add `legal/APP_STORE_IP_CHECKLIST.md` for future commercial and app store readiness.
+- [x] Avoid gameplay, asset, dependency, build, UI, audio behavior, and feature changes.
+
+## Project Hygiene
+
+- [ ] Keep legal/IP logs updated whenever new AI-generated assets, sounds, dependencies, or marketing materials are added.
+
+## Mobile Start-Screen Audio Unlock Bug Fix
+
+- [x] Make start/retry state transitions happen immediately on tap or click.
+- [x] Attempt audio unlock asynchronously so mobile audio cannot block gameplay.
+- [x] Play the start/retry sound only if audio unlock succeeds for the current run.
+- [x] Guard against delayed audio unlock causing stale or duplicate start sounds.
+- [x] Confirm joystick handling remains limited to the playing state.
+- [x] Preserve gameplay tuning, controls, audio mappings, HUD, background, dependencies, and build config.
+
+## Phase 13.3: Mobile Audio Optimization
+
+- [x] Confirm FFmpeg is available locally for audio conversion.
+- [x] Create compressed AAC/M4A runtime files in `public/sounds/optimized/`.
+- [x] Shorten the start-run cue from the long WAV master to a fast runtime cue.
+- [x] Trim/compress one-shot sound effects for mobile-friendly playback.
+- [x] Keep the Moon Rain ambience longer but compressed.
+- [x] Update `AudioManager` to prefer optimized files and keep WAV fallbacks.
+- [x] Prioritize loading start, orb, shadow, Bloom Burst, and game over sounds first.
+- [x] Skip the start cue if it is not ready within a short late-play window.
+- [x] Document source WAVs versus optimized runtime audio.
+- [x] Preserve gameplay, UI, controls, monetization scope, app packaging scope, and original WAV assets.
+
+## Phase 13.4: Mobile Audio Reliability Root-Cause Fix
+
+- [x] Prime audio directly from pointer/touch/click user gestures.
+- [x] Keep start/retry gameplay immediate and never blocked by audio unlock.
+- [x] Add a start-run HTMLAudio fallback for the first mobile gesture cue.
+- [x] Keep the start cue from double-playing or arriving several seconds late.
+- [x] Prioritize loading powerup sounds with other high-value gameplay cues.
+- [x] Change one-shot instance limiting to skip duplicate sounds instead of cutting off sounds already playing.
+- [x] Keep fresh Web Audio source nodes for one-shot playback.
+- [x] Add optional audio debug logging behind `?audioDebug=1`.
+- [x] Preserve gameplay, UI, controls, sound mappings, app packaging scope, monetization scope, and existing assets.
+
+## Phase 13.5: Use Manually Approved Runtime Audio Files Only
+
+- [x] Copy Omar-approved M4A runtime files into `public/sounds/runtime/m4a/`.
+- [x] Copy Omar-approved MP3 runtime fallback files into `public/sounds/runtime/mp3/`.
+- [x] Use clean kebab-case runtime file names without editing audio content.
+- [x] Remove the old Codex-generated `public/sounds/optimized/` folder.
+- [x] Update `AudioManager` to use M4A primary and MP3 fallback runtime sources only.
+- [x] Stop using WAV files for normal gameplay runtime playback.
+- [x] Keep audio unlock, start sound, one-shot playback, cooldown, and debug logging reliability fixes intact.
+- [x] Document that Codex should not auto-convert, trim, normalize, regenerate, or overwrite runtime audio unless explicitly requested.
+- [x] Preserve gameplay, UI, visuals, controls, app packaging scope, monetization scope, and original source/master WAV assets.
+
+## Phase 13.6: Runtime Audio Playback Regression Fix
+
+- [x] Investigate why the start cue worked while normal Web Audio gameplay sounds could be skipped.
+- [x] Queue gameplay sounds until the AudioContext is actually running instead of dropping them while unlock is still in progress.
+- [x] Retry AudioContext resume when later mobile user gestures happen after the start tap.
+- [x] Keep M4A primary while attempting MP3 fallback after fetch/decode failure.
+- [x] Improve debug logging for source selection, fetch success, decode fallback, play, skip, and natural end events.
+- [x] Reduce orb collect cooldown to a tiny same-frame guard.
+- [x] Allow more simultaneous orb collect one-shots without cutting off existing sounds.
+- [x] Let Moon Rain ambience wait for audio readiness without blocking one-shots.
+- [x] Preserve start sound reliability, gameplay, UI, visuals, controls, app packaging scope, monetization scope, and approved audio files.

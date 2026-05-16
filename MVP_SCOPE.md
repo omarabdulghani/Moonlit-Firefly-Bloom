@@ -11,7 +11,7 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Smooth firefly movement.
 - Desktop keyboard movement.
 - Desktop mouse/pointer movement.
-- Mobile-friendly touch movement.
+- Mobile-friendly touch movement with a default virtual joystick on phone/narrow screens.
 - Moonlight orbs that can be collected.
 - Score from collecting moonlight.
 - Moonlight orbs expire and respawn to keep the playfield alive.
@@ -32,7 +32,7 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Moon phase cycle.
 - Moon Rain event with visible falling moonlight.
 - Moon Shield, Moon Dash, and Glow Surge/x2 powerups.
-- Basic sound effects.
+- Basic sound effects using manually approved M4A runtime files with MP3 fallback.
 - Pause/resume through `Esc`, tab switching, browser blur, and page visibility changes.
 - Atmospheric rooftop background with skyline, railing, plants, birds, stars, and shooting stars.
 
@@ -41,6 +41,7 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Persistent flower/bloom trail scoring was removed for MVP clarity.
 - Powerups are temporary run-only pickups, not upgrades.
 - The game currently stores only local best score.
+- WAV audio files are source/master assets only; normal runtime playback uses approved M4A/MP3 files.
 - The prototype is still primarily a core-fun test, not a full release.
 
 ## Nice-to-Have Later Features

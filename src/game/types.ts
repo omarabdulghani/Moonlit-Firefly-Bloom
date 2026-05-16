@@ -26,6 +26,17 @@ export type MovementInput = {
   pointerActive: boolean;
 };
 
+export type VirtualJoystickSnapshot = {
+  visible: boolean;
+  active: boolean;
+  baseX: number;
+  baseY: number;
+  baseRadius: number;
+  knobX: number;
+  knobY: number;
+  knobRadius: number;
+};
+
 export type FireflySnapshot = {
   x: number;
   y: number;
@@ -122,6 +133,7 @@ export type RenderSnapshot = {
   glowSurgeReward: GlowSurgeRewardSnapshot | null;
   moonShieldPowerup: MoonShieldPowerupSnapshot | null;
   powerups: PowerupSnapshot[];
+  virtualJoystick: VirtualJoystickSnapshot | null;
   firefly: FireflySnapshot | null;
   moonlightOrbs: MoonlightOrbSnapshot[];
   shadowHazards: ShadowHazardSnapshot[];

@@ -279,6 +279,89 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: The pause overlay should feel like part of the game aesthetic, not a temporary debug panel, while preserving the existing pause behavior.
 - Alternatives considered: Larger redesign, adding decorative art, moving pause UI into DOM, leaving the cramped helper/button spacing unchanged.
 
+### Mobile Playability and Audio Stability
+
+- Date: `2026-05-15`
+- Decision: Stabilize mobile audio with Web Audio buffers after user interaction, reduce object density and visual size on phone-sized canvases, and enable a bottom-left virtual joystick by default on touch/narrow play.
+- Reason: iPhone playtests showed inconsistent audio, possible sound-related lag, cluttered small screens, and finger-drag controls covering the firefly. The mobile MVP needs fewer simultaneous objects and a control method that keeps the playfield visible.
+- Alternatives considered: Keeping HTMLAudio clones, adding a settings menu, adding mobile difficulty options, using user-agent detection, keeping desktop density on phone, requiring direct drag controls, adding PWA/Capacitor packaging now.
+- Note: The current WAV files still work, but production mobile builds should export compressed mp3 or m4a/aac versions to reduce download size and decode pressure.
+
+### Calm Start and Responsive Spawn Tuning
+
+- Date: `2026-05-15`
+- Decision: Add a short fair-start grace period, expand shadow spawn safety around the firefly, reduce phone shadow density further, and make moonlight orb spawning prefer reachable positions that avoid shadows.
+- Reason: The game should support a calming wind-down identity. New runs should never feel unfair, phone screens need more breathing room, and desktop orbs should not feel tedious because they spawn too far away.
+- Alternatives considered: Tutorial mode, difficulty settings, removing shadows from the early game, leaving desktop-wide orb spawning untouched, implementing a moving rare reward powerup now.
+- Note: A rare high-value moving reward powerup is documented as a future idea only and remains deferred.
+
+### Mobile Joystick Feel and Start Sound Fix
+
+- Date: `2026-05-15`
+- Decision: Slow virtual joystick movement with a mobile-only multiplier and play the start/retry cue only after the audio unlock promise has resolved.
+- Reason: Phone movement should feel calmer for the wind-down identity, and mobile browsers can drop the first sound if playback is requested before the audio context has fully resumed.
+- Alternatives considered: Slowing all movement, weakening Moon Dash, adding a settings menu, ignoring the first-sound race, adding separate mobile-only start audio.
+
+### Legal/IP Documentation Setup
+
+- Date: `2026-05-15`
+- Decision: Add internal legal/IP documentation logs for Suno audio, AI-assisted visual assets, AI-assisted code usage, third-party dependency licenses, and future app store review readiness.
+- Reason: The project may eventually ship commercially, so code, audio, visuals, dependency licenses, and AI tool provenance need a clear place to be tracked before launch review.
+- Alternatives considered: Keeping asset proof only in chat history, waiting until launch to create logs, adding legal conclusions to the docs, installing license audit tools now.
+
+### Visual Asset Provenance Correction
+
+- Date: `2026-05-15`
+- Decision: Document current background visuals as ChatGPT/OpenAI-generated artwork, with Canva used only for background removal, editing, and transparent PNG export where applicable.
+- Reason: Provenance records should distinguish the original generation source from later editing/export tools. Canva should only be listed as the original content source if Canva stock content, templates, photos, icons, fonts, or elements are used later.
+- Alternatives considered: Leaving Canva listed ambiguously as a possible original source, removing Canva from the logs entirely, waiting until app-store preparation to correct asset provenance.
+
+### Standing Legal/IP Log Workflow
+
+- Date: `2026-05-15`
+- Decision: Add a standing workflow rule that future asset, AI tool, dependency, marketing, video, app store, or monetization additions should update the relevant legal/IP logs in the same task.
+- Reason: Legal/IP records are most useful when provenance, receipts, prompts, and license-review TODOs are captured at the moment new material enters the project.
+- Alternatives considered: Updating logs only before launch, relying on memory or chat history, creating logs only for final shipped assets.
+
+### Mobile Start Must Not Wait for Audio Unlock
+
+- Date: `2026-05-15`
+- Decision: Start and retry taps transition to gameplay immediately, while mobile audio unlock and the start sound run asynchronously as best-effort feedback.
+- Reason: Mobile browsers can delay, reject, or hang audio unlock promises. Audio should never block core game state transitions or leave the player stuck on the start screen.
+- Alternatives considered: Waiting for audio unlock before starting, adding a player-facing audio error, removing the start sound, or adding a settings/menu flow.
+
+### Mobile Runtime Audio Optimization
+
+- Date: `2026-05-15`
+- Decision: Keep WAV files as source/master assets, add optimized AAC/M4A runtime derivatives, and have `AudioManager` prefer optimized files with WAV fallback.
+- Reason: Large uncompressed WAV files caused mobile delay and decode reliability problems, especially for the first start sound on iPhone. Smaller runtime files reduce fetch/decode time while preserving the original masters.
+- Alternatives considered: Keeping WAV-only playback, using OGG as the primary format, adding new audio dependencies, blocking gameplay until audio is ready, or removing sound from mobile.
+- Note: Audio unlock remains best-effort and non-blocking. The start cue is skipped if it is not ready quickly enough to avoid a confusing delayed intro sound.
+
+### Mobile Audio Gesture Reliability
+
+- Date: `2026-05-16`
+- Decision: Prime mobile audio directly inside pointer/touch/click user gestures, use a short start-run HTMLAudio fallback when Web Audio is not ready, and prevent duplicate one-shot sounds from cutting off sounds already playing.
+- Reason: iPhone browsers can miss first sounds when unlock/playback is deferred to the game loop, and stopping an active one-shot to enforce an instance cap can make powerup sounds appear to start and then cut off. Start/retry audio is now best-effort, quick, and never blocks gameplay.
+- Alternatives considered: Waiting for Web Audio buffers before starting, keeping all start audio in the requestAnimationFrame flow, globally increasing sound overlap, adding a settings menu, or removing mobile audio cues.
+- Note: Optional audio diagnostics are available with `?audioDebug=1` for mobile Safari/Web Inspector testing.
+
+### Manually Approved Runtime Audio
+
+- Date: `2026-05-17`
+- Decision: Use Omar-approved M4A/AAC runtime files as the primary browser audio format and Omar-approved MP3 files as fallback. WAV files remain source/master assets only, and the old Codex-generated optimized runtime files are no longer used.
+- Reason: The approved runtime files preserve Omar's intended sound timing and avoid accidental truncation or normalization from automated conversion. Runtime audio should be explicit, reviewable, and portable across iPhone, Android, and desktop browsers.
+- Alternatives considered: Continuing to use Codex-generated optimized files, falling back to WAV during gameplay, using OGG, or re-running FFmpeg automatically.
+- Note: Codex should not auto-convert, trim, normalize, regenerate, or overwrite runtime audio unless explicitly requested.
+
+### Runtime Audio Playback Regression Fix
+
+- Date: `2026-05-17`
+- Decision: Queue gameplay sound requests until Web Audio is genuinely running and decoded, keep MP3 fallback available after M4A fetch/decode failures, and loosen orb pickup rate limits for the manually approved runtime cues.
+- Reason: After switching to manual M4A/MP3 files, the start sound could work through its gesture-safe fallback while normal gameplay sounds were dropped if the AudioContext was still suspended or loading. The approved orb cue is also longer than the previous generated cue, so the old cooldown and two-instance cap made normal sequential pickups feel silent.
+- Alternatives considered: Using HTMLAudio for every sound, returning to WAV fallback, increasing all sound overlap globally, changing gameplay pickup timing, or editing the approved audio files.
+- Note: Debug logs behind `?audioDebug=1` now make source selection, fallback, context state, play results, and skip reasons easier to inspect on iPhone.
+
 ### Browser-First
 
 - Date: `YYYY-MM-DD`

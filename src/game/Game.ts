@@ -1,12 +1,27 @@
 import type { AudioManager } from '../audio/AudioManager';
 import type { InputManager } from '../input/InputManager';
 import type { CanvasRenderer } from '../render/CanvasRenderer';
-import type { GameState, HudMessageKind, MoonPhaseName, MoonRainMessage, PowerupType, RenderSnapshot } from './types';
+import type {
+  GameState,
+  HudMessageKind,
+  MoonPhaseName,
+  MoonRainMessage,
+  MoonShieldPowerupSnapshot,
+  MoonlightOrbSnapshot,
+  PowerupSnapshot,
+  PowerupType,
+  RenderSnapshot,
+  ShadowHazardSnapshot,
+} from './types';
 import { Firefly } from './Firefly';
-import { MoonlightOrb } from './MoonlightOrb';
+import {
+  MoonlightOrb,
+  type MoonlightOrbSpawnAvoidPoint,
+  type MoonlightOrbSpawnOptions,
+} from './MoonlightOrb';
 import { MoonShieldPowerup, type MoonShieldSpawnAvoidPoint } from './MoonShieldPowerup';
 import { Powerup, type PowerupSpawnAvoidPoint } from './Powerup';
-import { ShadowHazard } from './ShadowHazard';
+import { ShadowHazard, type ShadowSpawnAvoidPoint } from './ShadowHazard';
 
 export class Game {
   private static readonly bestScoreStorageKey = 'moonlitFireflyBloom.bestScore';
@@ -22,6 +37,7 @@ export class Game {
   ];
 
   private state: GameState = 'start';
+  private startRunAudioRequestId = 0;
   private elapsedTime = 0;
   private lastFrameTime = 0;
   private score = 0;
@@ -52,6 +68,7 @@ export class Game {
   private moonShieldSpawnTimer = 0;
   private moonDashTimer = 0;
   private powerupSpawnTimer = 0;
+  private startGraceTimer = 0;
   private temporaryHudMessageTimer = 0;
   private temporaryHudMessageText = '';
   private temporaryHudMessageKind: HudMessageKind = 'glowSurge';
@@ -85,9 +102,15 @@ export class Game {
   private readonly bloomBurstPushStrength = 46;
   // A short warning flash makes shadow contact read as active glow drain.
   private readonly shadowHitFlashDuration = 0.32;
-  // Keep early hazards small, then add one more shadow every two Night Levels.
-  private readonly baseShadowCount = 4;
-  private readonly maxShadowCount = 7;
+  // Short fair-start protection prevents immediate shadow drain while the player orients.
+  private readonly startGraceSeconds = 1.8;
+  // Phone screens have less escape space, so they use a calmer shadow profile.
+  private readonly phoneBaseShadowCount = 2;
+  private readonly phoneMaxShadowCount = 4;
+  private readonly tabletBaseShadowCount = 3;
+  private readonly tabletMaxShadowCount = 6;
+  private readonly desktopBaseShadowCount = 4;
+  private readonly desktopMaxShadowCount = 7;
   private readonly shadowSpeedIncreasePerNightLevel = 0.08;
   private readonly levelUpMessageDuration = 1.8;
   // Moon phases are visual only. This timer softens phase swaps as Night deepens.
@@ -159,6 +182,15 @@ export class Game {
     this.onStateChange(this.state);
   }
 
+  primeAudioFromUserGesture(source: string): void {
+    if (this.state === 'start' || this.state === 'gameOver') {
+      this.audio.playStartRunFromUserGesture(source);
+      return;
+    }
+
+    this.audio.unlockFromUserGesture(source);
+  }
+
   private tick = (timestamp: number): void => {
     const deltaTime = this.lastFrameTime === 0 ? 0 : (timestamp - this.lastFrameTime) / 1000;
     this.lastFrameTime = timestamp;
@@ -190,6 +222,8 @@ export class Game {
       this.updateMoonRain(safeDeltaTime);
       this.moonShieldTimer = Math.max(0, this.moonShieldTimer - safeDeltaTime);
       this.moonDashTimer = Math.max(0, this.moonDashTimer - safeDeltaTime);
+      this.startGraceTimer = Math.max(0, this.startGraceTimer - safeDeltaTime);
+      this.syncResponsiveDensity();
       this.firefly.update(
         safeDeltaTime,
         this.input.getMovementInput(),
@@ -251,17 +285,25 @@ export class Game {
       bloomBurst: this.getBloomBurstSnapshot(),
       glowSurgeReward: this.getGlowSurgeRewardSnapshot(),
       moonShieldPowerup:
-        this.state === 'start' ? null : this.moonShieldPowerup.getSnapshot(),
+        this.state === 'start'
+          ? null
+          : this.scaleMoonShieldPowerupSnapshot(this.moonShieldPowerup.getSnapshot()),
       powerups: this.state === 'start'
         ? []
         : this.powerups
           .map((powerup) => powerup.getSnapshot())
-          .filter((snapshot) => snapshot !== null),
+          .filter((snapshot) => snapshot !== null)
+          .map((snapshot) => this.scalePowerupSnapshot(snapshot)),
+      virtualJoystick: this.input.getVirtualJoystickSnapshot(),
       firefly: this.state === 'start' ? null : this.firefly.getSnapshot(),
       moonlightOrbs:
-        this.state === 'start' ? [] : this.moonlightOrbs.map((orb) => orb.getSnapshot()),
+        this.state === 'start'
+          ? []
+          : this.moonlightOrbs.map((orb) => this.scaleMoonlightOrbSnapshot(orb.getSnapshot())),
       shadowHazards:
-        this.state === 'start' ? [] : this.shadowHazards.map((hazard) => hazard.getSnapshot()),
+        this.state === 'start'
+          ? []
+          : this.shadowHazards.map((hazard) => this.scaleShadowHazardSnapshot(hazard.getSnapshot())),
     };
 
     this.renderer.render(snapshot);
@@ -275,9 +317,32 @@ export class Game {
     }
 
     if (this.state === 'start' || this.state === 'gameOver') {
-      void this.audio.unlock();
-      this.enterPlaying();
+      this.startRunWithBestEffortAudio();
     }
+  }
+
+  private startRunWithBestEffortAudio(): void {
+    if (this.state !== 'start' && this.state !== 'gameOver') {
+      return;
+    }
+
+    const startSoundRequestedAt = performance.now();
+    this.enterPlaying();
+    const audioRequestId = ++this.startRunAudioRequestId;
+
+    // Mobile browsers can delay or reject audio unlock. Gameplay starts immediately;
+    // the start cue plays only if audio becomes available for this specific run.
+    void this.audio.unlock()
+      .then(() => {
+        if (audioRequestId !== this.startRunAudioRequestId || this.state !== 'playing') {
+          return;
+        }
+
+        this.audio.playStartRun(startSoundRequestedAt);
+      })
+      .catch(() => {
+        console.warn('Start sound skipped because audio unlock was blocked.');
+      });
   }
 
   private resumePlaying(): void {
@@ -326,6 +391,7 @@ export class Game {
     this.moonShieldPowerup.despawn();
     this.moonDashTimer = 0;
     this.powerups.length = 0;
+    this.startGraceTimer = this.startGraceSeconds;
     this.powerupSpawnTimer = this.getNextPowerupSpawnDelay();
     this.temporaryHudMessageTimer = 0;
     this.temporaryHudMessageText = '';
@@ -336,7 +402,6 @@ export class Game {
     this.input.clearInput();
     this.state = 'playing';
     this.onStateChange(this.state);
-    this.audio.playStartRun();
   }
 
   private enterGameOver(): void {
@@ -354,7 +419,7 @@ export class Game {
 
   private resetMoonlightOrbs(): void {
     this.moonlightOrbs.length = 0;
-    this.addMoonlightOrbsUntil(this.moonlightOrbCount);
+    this.addMoonlightOrbsUntil(this.getTargetMoonlightOrbCount());
   }
 
   private updateMoonlightOrbs(deltaTime: number): void {
@@ -365,7 +430,7 @@ export class Game {
       orb.update(deltaTime);
 
       if (orb.isExpired()) {
-        orb.respawn(bounds, fireflyPosition);
+        orb.respawn(bounds, fireflyPosition, this.getMoonlightOrbSpawnOptions());
       }
     }
   }
@@ -380,11 +445,7 @@ export class Game {
     const fireflyPosition = { x: this.firefly.x, y: this.firefly.y };
 
     while (this.shadowHazards.length < targetCount) {
-      const avoidPoints = [
-        fireflyPosition,
-        ...this.moonlightOrbs.map((orb) => ({ x: orb.x, y: orb.y })),
-        ...this.shadowHazards.map((hazard) => ({ x: hazard.x, y: hazard.y })),
-      ];
+      const avoidPoints = this.getShadowSpawnAvoidPoints(fireflyPosition);
 
       this.shadowHazards.push(new ShadowHazard(bounds, avoidPoints));
     }
@@ -408,6 +469,7 @@ export class Game {
         bounds,
         fireflyPosition,
         this.moonlightOrbLifetimeSeconds,
+        this.getMoonlightOrbSpawnOptions(),
       ));
     }
   }
@@ -418,6 +480,259 @@ export class Game {
     }
 
     this.moonlightOrbs.length = targetCount;
+  }
+
+  private syncResponsiveDensity(): void {
+    this.trimMoonlightOrbsTo(this.getTargetMoonlightOrbCount());
+    this.addMoonlightOrbsUntil(this.getTargetMoonlightOrbCount());
+    this.trimShadowHazardsTo(this.getDesiredShadowCount());
+    this.addShadowHazardsUntil(this.getDesiredShadowCount());
+    this.trimSpecialPowerupsTo(this.getMaxActivePowerups());
+  }
+
+  private trimShadowHazardsTo(targetCount: number): void {
+    if (this.shadowHazards.length <= targetCount) {
+      return;
+    }
+
+    this.shadowHazards.length = targetCount;
+  }
+
+  private trimSpecialPowerupsTo(targetCount: number): void {
+    if (this.powerups.length <= targetCount) {
+      return;
+    }
+
+    this.powerups.length = targetCount;
+  }
+
+  private getMoonlightOrbCount(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return 4;
+      case 'tablet':
+        return 5;
+      case 'desktop':
+        return this.moonlightOrbCount;
+    }
+  }
+
+  private getMoonRainExtraOrbCount(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return 1;
+      case 'tablet':
+        return 2;
+      case 'desktop':
+        return this.moonRainExtraOrbCount;
+    }
+  }
+
+  private getBaseShadowCount(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return this.phoneBaseShadowCount;
+      case 'tablet':
+        return this.tabletBaseShadowCount;
+      case 'desktop':
+        return this.desktopBaseShadowCount;
+    }
+  }
+
+  private getMaxShadowCount(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return this.phoneMaxShadowCount;
+      case 'tablet':
+        return this.tabletMaxShadowCount;
+      case 'desktop':
+        return this.desktopMaxShadowCount;
+    }
+  }
+
+  private getMaxActivePowerups(): number {
+    return this.getScreenProfile() === 'desktop' ? this.maxActivePowerups : 1;
+  }
+
+  private getPowerupSpawnDelayMultiplier(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return 1.35;
+      case 'tablet':
+        return 1.15;
+      case 'desktop':
+        return 1;
+    }
+  }
+
+  private getObjectVisualScale(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return 0.8;
+      case 'tablet':
+        return 0.9;
+      case 'desktop':
+        return 1;
+    }
+  }
+
+  private getShadowCollisionScale(): number {
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return 0.86;
+      case 'tablet':
+        return 0.93;
+      case 'desktop':
+        return 1;
+    }
+  }
+
+  private getScreenProfile(): 'phone' | 'tablet' | 'desktop' {
+    const { width, height } = this.renderer.getSize();
+    const shortSide = Math.min(width, height);
+
+    // Canvas dimensions drive density, so browser chrome, orientation, and test viewports are handled consistently.
+    if (width <= 600 || shortSide <= 500) {
+      return 'phone';
+    }
+
+    if (width <= 900 || shortSide <= 700) {
+      return 'tablet';
+    }
+
+    return 'desktop';
+  }
+
+  private scaleMoonlightOrbSnapshot(snapshot: MoonlightOrbSnapshot): MoonlightOrbSnapshot {
+    return {
+      ...snapshot,
+      radius: snapshot.radius * this.getObjectVisualScale(),
+    };
+  }
+
+  private scaleShadowHazardSnapshot(snapshot: ShadowHazardSnapshot): ShadowHazardSnapshot {
+    return {
+      ...snapshot,
+      radius: snapshot.radius * this.getObjectVisualScale(),
+    };
+  }
+
+  private scaleMoonShieldPowerupSnapshot(
+    snapshot: MoonShieldPowerupSnapshot | null,
+  ): MoonShieldPowerupSnapshot | null {
+    if (!snapshot) {
+      return null;
+    }
+
+    return {
+      ...snapshot,
+      radius: snapshot.radius * this.getObjectVisualScale(),
+    };
+  }
+
+  private scalePowerupSnapshot(snapshot: PowerupSnapshot): PowerupSnapshot {
+    return {
+      ...snapshot,
+      radius: snapshot.radius * this.getObjectVisualScale(),
+    };
+  }
+
+  private getShadowSpawnAvoidPoints(fireflyPosition: { x: number; y: number }): ShadowSpawnAvoidPoint[] {
+    return [
+      {
+        x: fireflyPosition.x,
+        y: fireflyPosition.y,
+        safeDistance: this.getStartShadowSafeRadius(),
+      },
+      ...this.moonlightOrbs.map((orb) => ({
+        x: orb.x,
+        y: orb.y,
+        safeDistance: orb.radius + 68,
+      })),
+      ...this.shadowHazards.map((hazard) => ({
+        x: hazard.x,
+        y: hazard.y,
+        safeDistance: hazard.radius + 92,
+      })),
+    ];
+  }
+
+  private getStartShadowSafeRadius(): number {
+    const { width, height } = this.renderer.getSize();
+    const shortSide = Math.min(width, height);
+
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return this.clamp(shortSide * 0.42, 130, 180);
+      case 'tablet':
+        return this.clamp(shortSide * 0.36, 160, 210);
+      case 'desktop':
+        return this.clamp(shortSide * 0.32, 180, 240);
+    }
+  }
+
+  private getMoonlightOrbSpawnOptions(): MoonlightOrbSpawnOptions {
+    return {
+      avoidPoints: this.getMoonlightOrbAvoidPoints(),
+      minDistanceFromFirefly: this.getMinOrbDistanceFromFirefly(),
+      maxPreferredDistanceFromFirefly: this.getMaxPreferredOrbDistanceFromFirefly(),
+    };
+  }
+
+  private getMoonlightOrbAvoidPoints(): MoonlightOrbSpawnAvoidPoint[] {
+    return [
+      ...this.shadowHazards.map((hazard) => ({
+        x: hazard.x,
+        y: hazard.y,
+        safeDistance: hazard.radius + 34,
+      })),
+      ...this.moonlightOrbs.map((orb) => ({
+        x: orb.x,
+        y: orb.y,
+        safeDistance: orb.radius + 28,
+      })),
+      ...this.powerups.map((powerup) => ({
+        x: powerup.x,
+        y: powerup.y,
+        safeDistance: powerup.radius + 40,
+      })),
+      ...(this.moonShieldPowerup.active
+        ? [{
+            x: this.moonShieldPowerup.x,
+            y: this.moonShieldPowerup.y,
+            safeDistance: this.moonShieldPowerup.radius + 44,
+          }]
+        : []),
+    ];
+  }
+
+  private getMinOrbDistanceFromFirefly(): number {
+    const { width, height } = this.renderer.getSize();
+    const shortSide = Math.min(width, height);
+
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return this.clamp(shortSide * 0.2, 76, 105);
+      case 'tablet':
+        return this.clamp(shortSide * 0.17, 90, 112);
+      case 'desktop':
+        return this.clamp(shortSide * 0.15, 104, 126);
+    }
+  }
+
+  private getMaxPreferredOrbDistanceFromFirefly(): number {
+    const { width, height } = this.renderer.getSize();
+    const shortSide = Math.min(width, height);
+    const longSide = Math.max(width, height);
+
+    switch (this.getScreenProfile()) {
+      case 'phone':
+        return this.clamp(shortSide * 0.48, 150, 235);
+      case 'tablet':
+        return this.clamp(longSide * 0.32, 220, 330);
+      case 'desktop':
+        return this.clamp(longSide * 0.3, 280, 420);
+    }
   }
 
   private updateMoonShieldPowerup(deltaTime: number): void {
@@ -441,7 +756,7 @@ export class Game {
 
     this.removeInactivePowerups();
 
-    if (this.powerups.length >= this.maxActivePowerups) {
+    if (this.powerups.length >= this.getMaxActivePowerups()) {
       return;
     }
 
@@ -472,7 +787,7 @@ export class Game {
           this.triggerBloomBurst(fireflyPosition);
         }
 
-        orb.respawn(bounds, fireflyPosition);
+        orb.respawn(bounds, fireflyPosition, this.getMoonlightOrbSpawnOptions());
       }
     }
   }
@@ -487,25 +802,27 @@ export class Game {
 
   private applyShadowDamage(deltaTime: number): boolean {
     let touchingShadow = false;
+    const canTakeShadowDamage = !this.isMoonShieldActive() && this.startGraceTimer <= 0;
 
     for (const hazard of this.shadowHazards) {
       const distance = Math.hypot(this.firefly.x - hazard.x, this.firefly.y - hazard.y);
+      const shadowCollisionRadius = hazard.radius * this.getShadowCollisionScale();
 
-      if (distance <= this.firefly.radius + hazard.radius) {
+      if (distance <= this.firefly.radius + shadowCollisionRadius) {
         touchingShadow = true;
 
-        if (!this.isMoonShieldActive()) {
+        if (canTakeShadowDamage) {
           this.glow = Math.max(0, this.glow - hazard.damagePerSecond * deltaTime);
         }
       }
     }
 
-    if (touchingShadow && !this.isMoonShieldActive()) {
+    if (touchingShadow && canTakeShadowDamage) {
       this.shadowHitFlashTimer = this.shadowHitFlashDuration;
       this.audio.playShadowDamage();
     }
 
-    return touchingShadow;
+    return touchingShadow && canTakeShadowDamage;
   }
 
   private collectTouchedMoonShield(): void {
@@ -632,8 +949,8 @@ export class Game {
 
   private getDesiredShadowCount(): number {
     return Math.min(
-      this.maxShadowCount,
-      this.baseShadowCount + Math.floor((this.nightLevel - 1) / 2),
+      this.getMaxShadowCount(),
+      this.getBaseShadowCount() + Math.floor((this.nightLevel - 1) / 2),
     );
   }
 
@@ -703,13 +1020,13 @@ export class Game {
     this.fullMoonTrialsSurvived += 1;
     this.moonRainMessage = 'end';
     this.moonRainMessageTimer = this.moonRainMessageDuration;
-    this.trimMoonlightOrbsTo(this.moonlightOrbCount);
+    this.trimMoonlightOrbsTo(this.getMoonlightOrbCount());
     this.audio.stopMoonRainAmbience();
     this.audio.playMoonRainEnd();
   }
 
   private getTargetMoonlightOrbCount(): number {
-    return this.moonlightOrbCount + (this.isMoonRainActive ? this.moonRainExtraOrbCount : 0);
+    return this.getMoonlightOrbCount() + (this.isMoonRainActive ? this.getMoonRainExtraOrbCount() : 0);
   }
 
   private getMoonRainProgress(): number {
@@ -855,7 +1172,7 @@ export class Game {
       ? this.earlyRunPowerupSpawnIntervalMax
       : this.normalPowerupSpawnIntervalMax;
 
-    return this.randomBetween(min, max);
+    return this.randomBetween(min, max) * this.getPowerupSpawnDelayMultiplier();
   }
 
   private isEarlyRun(): boolean {
@@ -918,6 +1235,10 @@ export class Game {
 
   private randomBetween(min: number, max: number): number {
     return min + Math.random() * (max - min);
+  }
+
+  private clamp(value: number, min: number, max: number): number {
+    return Math.max(min, Math.min(max, value));
   }
 
   private updateBestScore(): void {

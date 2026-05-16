@@ -20,6 +20,28 @@ Instructions for future AI coding agents working on Moonlit Firefly Bloom.
 - Avoid multiplayer, accounts, online leaderboards, shops, achievements, daily quests, complex upgrades, story mode, multiple levels, and complex asset pipelines in the MVP.
 - Keep the current priority browser-first. Future iOS/Android packaging may happen later through a web-to-native wrapper such as Capacitor, but do not implement native mobile packaging until explicitly requested.
 
+## Legal/IP Documentation Workflow
+
+- If a new Suno sound is added, update `legal/AUDIO_ASSET_LOG.md`.
+- If a new ChatGPT/OpenAI-generated visual asset is added, update `legal/VISUAL_ASSET_LOG.md`.
+- If Canva is used only for background removal/export, document Canva as the editing/export tool, not the original art source.
+- If Canva stock content, templates, fonts, icons, photos, or elements are ever used, log them separately.
+- If a new AI tool is used later, document it in `legal/AI_TOOL_USAGE_LOG.md`.
+- If a new npm dependency is added, update `legal/THIRD_PARTY_LICENSES.md` or mark it TODO for license review.
+- If a new marketing/video asset is created later, add it to the appropriate legal log or create a new marketing/video asset log.
+- Do not invent missing legal details. Use TODO for unknown dates, prompts, generation links, receipts, or subscription proof.
+- Legal documentation updates should be included in the same task whenever new assets or dependencies are added.
+
+## Audio Asset Workflow
+
+- Use only Omar-approved runtime audio files for gameplay playback.
+- Runtime audio lives in `public/sounds/runtime/m4a/` and `public/sounds/runtime/mp3/`.
+- Treat M4A/AAC as the primary runtime format and MP3 as the fallback runtime format.
+- Keep WAV files as source/master assets only; do not use WAV as normal gameplay fallback.
+- Do not auto-convert, trim, normalize, regenerate, or overwrite audio files unless explicitly requested.
+- Preserve mobile audio reliability rules: unlock/prime from real user gestures, keep gameplay non-blocking, use fresh Web Audio one-shot sources, and let sounds finish naturally.
+- Keep `?audioDebug=1` diagnostics available for mobile browser audio investigation.
+
 ## Coding Guidance
 
 - Use clear TypeScript.
@@ -40,6 +62,7 @@ Instructions for future AI coding agents working on Moonlit Firefly Bloom.
 - Bloom trails should support the cozy fantasy without becoming a performance problem.
 - The first playable version should be understandable immediately.
 - Keep canvas responsive and touch controls supported so the browser MVP remains mobile-aware.
+- Keep the mobile virtual joystick calm, readable, and out of the main play focus.
 
 ## Testing Expectations
 

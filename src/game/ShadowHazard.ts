@@ -1,5 +1,9 @@
 import type { CanvasSize, ShadowHazardSnapshot, Vector2 } from './types';
 
+export type ShadowSpawnAvoidPoint = Vector2 & {
+  safeDistance: number;
+};
+
 export class ShadowHazard {
   // Shadow size range keeps hazards readable without filling the whole arena.
   private static readonly shadowMinRadius = 28;
@@ -17,7 +21,7 @@ export class ShadowHazard {
   readonly radius: number;
   readonly damagePerSecond: number;
 
-  constructor(bounds: CanvasSize, avoidPoints: Vector2[]) {
+  constructor(bounds: CanvasSize, avoidPoints: ShadowSpawnAvoidPoint[]) {
     this.radius = this.randomBetween(
       ShadowHazard.shadowMinRadius,
       ShadowHazard.shadowMaxRadius,
@@ -62,7 +66,7 @@ export class ShadowHazard {
     };
   }
 
-  private reset(bounds: CanvasSize, avoidPoints: Vector2[]): void {
+  private reset(bounds: CanvasSize, avoidPoints: ShadowSpawnAvoidPoint[]): void {
     const padding = this.radius + 24;
     const minX = padding;
     const maxX = Math.max(minX, bounds.width - padding);
@@ -135,8 +139,8 @@ export class ShadowHazard {
     this.velocityY = (this.velocityY / speed) * maxBurstSpeed;
   }
 
-  private isFarEnoughFromAvoidPoints(candidate: Vector2, avoidPoints: Vector2[]): boolean {
-    return avoidPoints.every((point) => this.distanceBetween(candidate, point) > this.radius + 92);
+  private isFarEnoughFromAvoidPoints(candidate: Vector2, avoidPoints: ShadowSpawnAvoidPoint[]): boolean {
+    return avoidPoints.every((point) => this.distanceBetween(candidate, point) > point.safeDistance);
   }
 
   private randomBetween(min: number, max: number): number {

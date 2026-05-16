@@ -8,6 +8,10 @@ The player is a tiny glowing firefly drifting across a dark rooftop under the mo
 
 The mood should be cozy, lonely in a comforting way, and slightly tense when the glow gets low.
 
+## Positioning
+
+Moonlit Firefly Bloom is a soothing, cozy, calming arcade game for winding down. It should feel gentle enough to play before bed while still offering a light moonlit challenge, fast retries, and small magical reward moments.
+
 ## First 10 Seconds
 
 - The player appears as a small warm glow in a dark garden arena.
@@ -40,6 +44,7 @@ The mood should be cozy, lonely in a comforting way, and slightly tense when the
 ## Player Actions
 
 - Move the firefly.
+- Use desktop keyboard/mouse controls or the mobile virtual joystick.
 - Collect moonlight orbs.
 - Steer away from shadow hazards.
 - Collect special powerups when they appear.
@@ -85,6 +90,12 @@ Powerups are temporary run-only pickups. They are not upgrades, inventory items,
 
 These systems should make runs feel alive without becoming a separate mode.
 
+## Future Ideas
+
+- A rare high-value reward powerup that moves away from the firefly and is harder to catch.
+
+This moving reward powerup is only a future idea. It should not be implemented until the core mobile and desktop play feel calm, fair, and readable.
+
 ## Replayability
 
 Replayability comes from:
@@ -123,6 +134,8 @@ Current sound direction:
 - Low-glow heartbeat warning that stops when glow recovers.
 - Moon Rain begin/end sounds and quiet ambience during the event.
 - Calm game over sound.
+
+Runtime sound files are Omar-approved M4A/MP3 derivatives. WAV files are source/master references only.
 
 Visual feedback should come first because the MVP must work even muted.
 

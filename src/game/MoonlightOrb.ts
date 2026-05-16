@@ -1,5 +1,15 @@
 import type { CanvasSize, MoonlightOrbSnapshot, Vector2 } from './types';
 
+export type MoonlightOrbSpawnAvoidPoint = Vector2 & {
+  safeDistance: number;
+};
+
+export type MoonlightOrbSpawnOptions = {
+  avoidPoints: MoonlightOrbSpawnAvoidPoint[];
+  minDistanceFromFirefly: number;
+  maxPreferredDistanceFromFirefly: number;
+};
+
 export class MoonlightOrb {
   x = 0;
   y = 0;
@@ -12,10 +22,11 @@ export class MoonlightOrb {
 
   constructor(
     bounds: CanvasSize,
-    avoidPoint: Vector2,
+    fireflyPosition: Vector2,
     private readonly lifetimeSeconds: number,
+    spawnOptions: MoonlightOrbSpawnOptions,
   ) {
-    this.respawn(bounds, avoidPoint);
+    this.respawn(bounds, fireflyPosition, spawnOptions);
   }
 
   update(deltaTime: number): void {
@@ -27,29 +38,68 @@ export class MoonlightOrb {
     return this.age >= this.lifetimeSeconds;
   }
 
-  respawn(bounds: CanvasSize, avoidPoint: Vector2): void {
+  respawn(bounds: CanvasSize, fireflyPosition: Vector2, spawnOptions: MoonlightOrbSpawnOptions): void {
     const padding = this.radius + 28;
     const minX = padding;
     const maxX = Math.max(minX, bounds.width - padding);
     const minY = Math.min(Math.max(72, padding), bounds.height / 2);
     const maxY = Math.max(minY, bounds.height - padding - 42);
 
-    for (let attempt = 0; attempt < 24; attempt += 1) {
-      const candidate = {
-        x: this.randomBetween(minX, maxX),
-        y: this.randomBetween(minY, maxY),
-      };
+    for (let attempt = 0; attempt < 30; attempt += 1) {
+      const candidate = this.getRandomCandidate(minX, maxX, minY, maxY);
 
-      if (this.distanceBetween(candidate, avoidPoint) > 120) {
-        this.x = candidate.x;
-        this.y = candidate.y;
-        this.resetLifetime();
+      if (this.isSafeCandidate(candidate, fireflyPosition, spawnOptions, true)) {
+        this.placeAt(candidate);
         return;
       }
     }
 
-    this.x = this.randomBetween(minX, maxX);
-    this.y = this.randomBetween(minY, maxY);
+    for (let attempt = 0; attempt < 28; attempt += 1) {
+      const candidate = this.getRandomCandidate(minX, maxX, minY, maxY);
+
+      if (this.isSafeCandidate(candidate, fireflyPosition, spawnOptions, false)) {
+        this.placeAt(candidate);
+        return;
+      }
+    }
+
+    this.placeAt(this.getRandomCandidate(minX, maxX, minY, maxY));
+  }
+
+  private getRandomCandidate(minX: number, maxX: number, minY: number, maxY: number): Vector2 {
+    return {
+      x: this.randomBetween(minX, maxX),
+      y: this.randomBetween(minY, maxY),
+    };
+  }
+
+  private isSafeCandidate(
+    candidate: Vector2,
+    fireflyPosition: Vector2,
+    spawnOptions: MoonlightOrbSpawnOptions,
+    respectPreferredMaxDistance: boolean,
+  ): boolean {
+    const fireflyDistance = this.distanceBetween(candidate, fireflyPosition);
+
+    if (fireflyDistance < spawnOptions.minDistanceFromFirefly) {
+      return false;
+    }
+
+    if (
+      respectPreferredMaxDistance &&
+      fireflyDistance > spawnOptions.maxPreferredDistanceFromFirefly
+    ) {
+      return false;
+    }
+
+    return spawnOptions.avoidPoints.every(
+      (point) => this.distanceBetween(candidate, point) > point.safeDistance,
+    );
+  }
+
+  private placeAt(position: Vector2): void {
+    this.x = position.x;
+    this.y = position.y;
     this.resetLifetime();
   }
 

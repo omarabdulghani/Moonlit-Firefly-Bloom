@@ -21,6 +21,9 @@ moonlit-firefly-bloom/
     assets/
       background/
     sounds/
+      runtime/
+        m4a/
+        mp3/
   src/
     main.ts
     styles.css
@@ -60,7 +63,7 @@ Avoid turning these into a large engine. Add only what the MVP needs.
 
 ## Game States
 
-- `ready`: initial screen or first-run prompt.
+- `start`: initial screen or first-run prompt.
 - `playing`: active gameplay.
 - `paused`: gameplay timers are frozen until the player resumes.
 - `gameOver`: final score, best score, and retry.
@@ -77,9 +80,9 @@ Desktop:
 
 Mobile:
 
-- Support touch and drag.
-- The firefly should move toward the touch target or follow a virtual direction based on drag.
-- Avoid tiny on-screen controls for the MVP.
+- Use a bottom-left virtual joystick by default on phone/narrow screens.
+- Keep direct touch/pointer movement available where it does not conflict with joystick input.
+- Keep joystick movement calmer than desktop movement for the wind-down tone.
 - Prevent page scrolling while interacting with the canvas.
 
 Shared:
@@ -149,11 +152,16 @@ Tune after playtesting.
 
 ## Audio Plan
 
-- Keep sound optional by browser behavior: unlock after user interaction.
-- Use public runtime paths under `/sounds/`.
-- Use cooldowns for repeated sounds such as shadow damage.
+- Keep sound optional by browser behavior: unlock/prime directly from user interaction.
+- Use manually approved runtime paths under `/sounds/runtime/m4a/` and `/sounds/runtime/mp3/`.
+- Try M4A/AAC first and MP3 second. WAV files are source/master assets only, not normal gameplay runtime fallback.
+- Do not auto-convert, trim, normalize, regenerate, or overwrite runtime audio unless explicitly requested.
+- Use Web Audio buffers for gameplay one-shots and Moon Rain ambience.
+- Keep the start cue mobile-safe and non-blocking; it may use a gesture-safe HTMLAudio fallback.
+- Use small cooldowns for repeated sounds such as orb collection and shadow damage.
 - Stop low-glow warning immediately when glow recovers, the run ends, or the game pauses.
 - Stop Moon Rain ambience when Moon Rain ends, the run pauses, or the run ends.
+- Use `?audioDebug=1` for hidden audio diagnostics during mobile Safari/Chrome debugging.
 - Do not add sound settings until the core loop is stable enough to justify the extra UI.
 
 ## Pause/Resume Plan
