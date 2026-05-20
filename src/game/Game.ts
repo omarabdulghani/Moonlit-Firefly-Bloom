@@ -1,4 +1,6 @@
 import type { AudioManager } from '../audio/AudioManager';
+import type { DevScenario } from '../debug/DevScenario';
+import { getDevScenarioLabel } from '../debug/DevScenario';
 import type { InputManager } from '../input/InputManager';
 import type { CanvasRenderer } from '../render/CanvasRenderer';
 import type {
@@ -12,6 +14,7 @@ import type {
   PowerupType,
   RenderSnapshot,
   ShadowHazardSnapshot,
+  ShadowVisualState,
 } from './types';
 import { Firefly } from './Firefly';
 import {
@@ -22,6 +25,10 @@ import {
 import { MoonShieldPowerup, type MoonShieldSpawnAvoidPoint } from './MoonShieldPowerup';
 import { Powerup, type PowerupSpawnAvoidPoint } from './Powerup';
 import { ShadowHazard, type ShadowSpawnAvoidPoint } from './ShadowHazard';
+
+type GameOptions = {
+  devScenario?: DevScenario;
+};
 
 export class Game {
   private static readonly bestScoreStorageKey = 'moonlitFireflyBloom.bestScore';
@@ -60,15 +67,25 @@ export class Game {
   private previousMoonPhaseIndex = 0;
   private currentMoonPhaseIndex = 0;
   private moonPhaseTransitionTimer = 0;
+  private isFullMoonBlessingActive = false;
+  private fullMoonBlessingElapsedTime = 0;
+  private fullMoonBlessingVisualFadeOutTimer = 0;
+  private fullMoonShadowVisualState: ShadowVisualState = 'normal';
+  private fullMoonShadowTransitionTimer = 0;
+  private pendingMoonRainPhaseChanges = 0;
   private isMoonRainActive = false;
   private moonRainTimer = 0;
+  private moonRainVisualFadeOutTimer = 0;
   private moonRainMessageTimer = 0;
   private moonRainMessage: MoonRainMessage = null;
   private moonShieldTimer = 0;
   private moonShieldSpawnTimer = 0;
+  private isMoonShieldGlowLocked = false;
   private moonDashTimer = 0;
   private powerupSpawnTimer = 0;
   private startGraceTimer = 0;
+  private devFullMoonSequencePhaseTimer = 0;
+  private devFullMoonSequencePhaseChangesRemaining = 0;
   private temporaryHudMessageTimer = 0;
   private temporaryHudMessageText = '';
   private temporaryHudMessageKind: HudMessageKind = 'glowSurge';
@@ -115,11 +132,23 @@ export class Game {
   private readonly levelUpMessageDuration = 1.8;
   // Moon phases are visual only. This timer softens phase swaps as Night deepens.
   private readonly moonPhaseTransitionDurationSeconds = 1.6;
-  // Later Full Moons trigger this short event: more orbs, slightly faster shadows.
-  private readonly moonRainDurationSeconds = 18;
+  // Later Full Moons grant protection for the whole Full Moon phase.
+  private readonly fullMoonVisualFadeSeconds = 1.2;
+  private readonly fullMoonBlessingMessageDurationSeconds = 5.2;
+  private readonly fullMoonShadowTransitionSeconds = 0.95;
+  private readonly moonRainDelayPhaseChangesAfterFullMoon = 2;
+  // Moon Rain is an independent timed after-event: more orbs, slightly faster shadows.
+  private readonly moonRainDurationSeconds = 22;
   private readonly moonRainExtraOrbCount = 3;
   private readonly moonRainShadowSpeedMultiplier = 1.18;
+  // Moon Rain gameplay starts and ends on time; only the falling-light visual fades.
+  private readonly moonRainFadeInSeconds = 1.2;
+  private readonly moonRainFadeOutSeconds = 1.2;
   private readonly moonRainMessageDuration = 1.8;
+  // URL-only dev shortcuts make long event sequences quick to test without changing normal runs.
+  private readonly devFullMoonNightLevel = 9;
+  private readonly devFullMoonSequenceFirstAdvanceSeconds = 5.8;
+  private readonly devFullMoonSequenceNextAdvanceSeconds = 2.8;
   private readonly temporaryHudMessageDuration = 1.6;
   // Moon Shield is a rare temporary pickup, not permanent progression.
   private readonly moonShieldDurationSeconds = 5;
@@ -156,13 +185,17 @@ export class Game {
   private readonly shadowHazards: ShadowHazard[] = [];
   private readonly moonShieldPowerup = new MoonShieldPowerup(this.moonShieldRadius);
   private readonly powerups: Powerup[] = [];
+  private readonly devScenario: DevScenario;
 
   constructor(
     private readonly renderer: CanvasRenderer,
     private readonly input: InputManager,
     private readonly audio: AudioManager,
     private readonly onStateChange: (state: GameState) => void = () => {},
-  ) {}
+    options: GameOptions = {},
+  ) {
+    this.devScenario = options.devScenario ?? 'none';
+  }
 
   start(): void {
     this.onStateChange(this.state);
@@ -217,10 +250,18 @@ export class Game {
       this.shadowHitFlashTimer = Math.max(0, this.shadowHitFlashTimer - safeDeltaTime);
       this.levelUpMessageTimer = Math.max(0, this.levelUpMessageTimer - safeDeltaTime);
       this.moonPhaseTransitionTimer = Math.max(0, this.moonPhaseTransitionTimer - safeDeltaTime);
+      this.updateFullMoonBlessing(safeDeltaTime);
+      this.updateFullMoonShadowTransition(safeDeltaTime);
+      this.fullMoonBlessingVisualFadeOutTimer = Math.max(
+        0,
+        this.fullMoonBlessingVisualFadeOutTimer - safeDeltaTime,
+      );
+      this.moonRainVisualFadeOutTimer = Math.max(0, this.moonRainVisualFadeOutTimer - safeDeltaTime);
       this.moonRainMessageTimer = Math.max(0, this.moonRainMessageTimer - safeDeltaTime);
       this.temporaryHudMessageTimer = Math.max(0, this.temporaryHudMessageTimer - safeDeltaTime);
       this.updateMoonRain(safeDeltaTime);
-      this.moonShieldTimer = Math.max(0, this.moonShieldTimer - safeDeltaTime);
+      this.updateDevScenario(safeDeltaTime);
+      this.updateMoonShieldTimer(safeDeltaTime);
       this.moonDashTimer = Math.max(0, this.moonDashTimer - safeDeltaTime);
       this.startGraceTimer = Math.max(0, this.startGraceTimer - safeDeltaTime);
       this.syncResponsiveDensity();
@@ -268,8 +309,12 @@ export class Game {
       moonPhaseName: this.getMoonPhaseName(this.currentMoonPhaseIndex),
       moonPhaseTransitionProgress: this.getMoonPhaseTransitionProgress(),
       moonPhaseMessageProgress: this.levelUpMessageTimer / this.levelUpMessageDuration,
+      isFullMoonBlessingActive: this.isFullMoonBlessingActive,
+      fullMoonBlessingProgress: this.getFullMoonBlessingProgress(),
+      fullMoonBlessingIntensity: this.getFullMoonBlessingIntensity(),
       isMoonRainActive: this.isMoonRainActive,
       moonRainProgress: this.getMoonRainProgress(),
+      moonRainVisualIntensity: this.getMoonRainVisualIntensity(),
       moonRainMessage: this.moonRainMessageTimer > 0 ? this.moonRainMessage : null,
       moonRainMessageProgress: this.moonRainMessageTimer / this.moonRainMessageDuration,
       glow: this.glow,
@@ -303,7 +348,10 @@ export class Game {
       shadowHazards:
         this.state === 'start'
           ? []
-          : this.shadowHazards.map((hazard) => this.scaleShadowHazardSnapshot(hazard.getSnapshot())),
+          : this.shadowHazards.map((hazard) => this.scaleShadowHazardSnapshot(
+            hazard.getSnapshot(this.getFullMoonShadowVisibility(), this.fullMoonShadowVisualState),
+          )),
+      devScenarioLabel: this.getDevScenarioLabel(),
     };
 
     this.renderer.render(snapshot);
@@ -382,12 +430,22 @@ export class Game {
     this.previousMoonPhaseIndex = this.getMoonPhaseIndexForNight(1);
     this.currentMoonPhaseIndex = this.previousMoonPhaseIndex;
     this.moonPhaseTransitionTimer = 0;
+    this.isFullMoonBlessingActive = false;
+    this.fullMoonBlessingElapsedTime = 0;
+    this.fullMoonBlessingVisualFadeOutTimer = 0;
+    this.fullMoonShadowVisualState = 'normal';
+    this.fullMoonShadowTransitionTimer = 0;
+    this.pendingMoonRainPhaseChanges = 0;
     this.isMoonRainActive = false;
     this.moonRainTimer = 0;
+    this.moonRainVisualFadeOutTimer = 0;
     this.moonRainMessageTimer = 0;
     this.moonRainMessage = null;
+    this.devFullMoonSequencePhaseTimer = 0;
+    this.devFullMoonSequencePhaseChangesRemaining = 0;
     this.moonShieldTimer = 0;
     this.moonShieldSpawnTimer = this.moonShieldFirstSpawnDelaySeconds;
+    this.isMoonShieldGlowLocked = false;
     this.moonShieldPowerup.despawn();
     this.moonDashTimer = 0;
     this.powerups.length = 0;
@@ -397,11 +455,40 @@ export class Game {
     this.temporaryHudMessageText = '';
     this.isTouchingShadow = false;
     this.firefly.reset(this.renderer.getSize());
+    this.applyDevScenarioBeforeSpawns();
     this.resetMoonlightOrbs();
     this.resetShadowHazards();
+    this.applyDevScenarioAfterSpawns();
     this.input.clearInput();
     this.state = 'playing';
     this.onStateChange(this.state);
+  }
+
+  private applyDevScenarioBeforeSpawns(): void {
+    if (!this.isDevScenario()) {
+      return;
+    }
+
+    if (this.devScenario === 'fullMoon' || this.devScenario === 'fullMoonSequence') {
+      this.nightLevel = this.devFullMoonNightLevel;
+      this.highestNightLevel = this.devFullMoonNightLevel;
+      this.previousMoonPhaseIndex = Game.moonPhases.length - 1;
+      this.currentMoonPhaseIndex = this.getMoonPhaseIndexForNight(this.devFullMoonNightLevel);
+      this.moonPhaseTransitionTimer = this.moonPhaseTransitionDurationSeconds;
+      this.levelUpMessageTimer = this.levelUpMessageDuration;
+      this.startFullMoonBlessing();
+
+      if (this.devScenario === 'fullMoonSequence') {
+        this.devFullMoonSequencePhaseTimer = this.devFullMoonSequenceFirstAdvanceSeconds;
+        this.devFullMoonSequencePhaseChangesRemaining = this.moonRainDelayPhaseChangesAfterFullMoon;
+      }
+    }
+  }
+
+  private applyDevScenarioAfterSpawns(): void {
+    if (this.devScenario === 'moonRain') {
+      this.startMoonRain();
+    }
   }
 
   private enterGameOver(): void {
@@ -749,6 +836,24 @@ export class Game {
     }
   }
 
+  private updateMoonShieldTimer(deltaTime: number): void {
+    if (this.moonShieldTimer <= 0) {
+      this.isMoonShieldGlowLocked = false;
+      return;
+    }
+
+    this.moonShieldTimer = Math.max(0, this.moonShieldTimer - deltaTime);
+
+    if (this.moonShieldTimer <= 0) {
+      this.isMoonShieldGlowLocked = false;
+      return;
+    }
+
+    if (this.isMoonShieldGlowLocked) {
+      this.glow = this.maxGlow;
+    }
+  }
+
   private updateSpecialPowerups(deltaTime: number): void {
     for (const powerup of this.powerups) {
       powerup.update(deltaTime);
@@ -793,7 +898,7 @@ export class Game {
   }
 
   private applyPassiveGlowDrain(deltaTime: number): void {
-    if (this.isMoonShieldActive()) {
+    if (this.isMoonShieldActive() || this.isFullMoonBlessingActive) {
       return;
     }
 
@@ -802,7 +907,10 @@ export class Game {
 
   private applyShadowDamage(deltaTime: number): boolean {
     let touchingShadow = false;
-    const canTakeShadowDamage = !this.isMoonShieldActive() && this.startGraceTimer <= 0;
+    const canTakeShadowDamage =
+      !this.isMoonShieldActive() &&
+      !this.areShadowsSuppressedByFullMoon() &&
+      this.startGraceTimer <= 0;
 
     for (const hazard of this.shadowHazards) {
       const distance = Math.hypot(this.firefly.x - hazard.x, this.firefly.y - hazard.y);
@@ -840,8 +948,10 @@ export class Game {
     }
 
     this.moonShieldPowerup.despawn();
-    this.restoreGlow(this.orbGlowRestore);
+    const wasGlowFull = this.glow >= this.maxGlow;
     this.moonShieldTimer = this.moonShieldDurationSeconds;
+    this.isMoonShieldGlowLocked = wasGlowFull;
+    this.restoreGlow(this.orbGlowRestore);
     this.scheduleNextMoonShieldSpawn();
     this.audio.playMoonShield();
   }
@@ -875,7 +985,9 @@ export class Game {
     this.bloomBurstTimer = this.bloomBurstDuration;
     this.bloomBurstCooldownTimer = this.bloomBurstCooldownSeconds;
     this.bloomBurstPosition = { ...origin };
-    this.glow = Math.max(0, this.glow - this.bloomBurstGlowCost);
+    if (!this.isFullMoonBlessingActive && !this.isMoonShieldGlowLocked) {
+      this.glow = Math.max(0, this.glow - this.bloomBurstGlowCost);
+    }
     this.audio.playBloomBurst();
 
     for (const hazard of this.shadowHazards) {
@@ -932,6 +1044,36 @@ export class Game {
     this.addShadowHazardsUntil(this.getDesiredShadowCount());
   }
 
+  private updateDevScenario(deltaTime: number): void {
+    if (
+      this.devScenario !== 'fullMoonSequence' ||
+      this.devFullMoonSequencePhaseChangesRemaining <= 0
+    ) {
+      return;
+    }
+
+    this.devFullMoonSequencePhaseTimer = Math.max(
+      0,
+      this.devFullMoonSequencePhaseTimer - deltaTime,
+    );
+
+    if (this.devFullMoonSequencePhaseTimer > 0) {
+      return;
+    }
+
+    this.nightLevel += 1;
+    this.highestNightLevel = Math.max(this.highestNightLevel, this.nightLevel);
+    this.updateMoonPhaseForNight(this.nightLevel);
+    this.levelUpMessageTimer = this.levelUpMessageDuration;
+    this.addShadowHazardsUntil(this.getDesiredShadowCount());
+
+    this.devFullMoonSequencePhaseChangesRemaining -= 1;
+    this.devFullMoonSequencePhaseTimer =
+      this.devFullMoonSequencePhaseChangesRemaining > 0
+        ? this.devFullMoonSequenceNextAdvanceSeconds
+        : 0;
+  }
+
   private getPassiveGlowDrainPerSecond(): number {
     return (
       this.basePassiveGlowDrainPerSecond +
@@ -969,14 +1111,24 @@ export class Game {
       return;
     }
 
+    const previousMoonPhaseName = this.getMoonPhaseName(this.currentMoonPhaseIndex);
     this.previousMoonPhaseIndex = this.currentMoonPhaseIndex;
     this.currentMoonPhaseIndex = nextMoonPhaseIndex;
     this.moonPhaseTransitionTimer = this.moonPhaseTransitionDurationSeconds;
 
     const nextMoonPhaseName = this.getMoonPhaseName(nextMoonPhaseIndex);
 
+    if (previousMoonPhaseName === 'Full Moon' && this.isFullMoonBlessingActive) {
+      this.endFullMoonBlessing();
+    }
+
     if (nextMoonPhaseName === 'Full Moon' && nightLevel > 1) {
-      this.startMoonRain();
+      this.startFullMoonBlessing();
+      this.audio.playMoonPhase(nextMoonPhaseName);
+      return;
+    }
+
+    if (this.advancePendingMoonRainDelay()) {
       return;
     }
 
@@ -991,6 +1143,133 @@ export class Game {
     return 1 - this.moonPhaseTransitionTimer / this.moonPhaseTransitionDurationSeconds;
   }
 
+  private startFullMoonBlessing(): void {
+    if (this.isFullMoonBlessingActive) {
+      return;
+    }
+
+    this.isFullMoonBlessingActive = true;
+    this.fullMoonBlessingElapsedTime = 0;
+    this.fullMoonBlessingVisualFadeOutTimer = 0;
+    this.beginFullMoonShadowVanish();
+    this.pendingMoonRainPhaseChanges = 0;
+    this.glow = this.maxGlow;
+    this.collectPulseTimer = this.collectPulseDuration;
+    this.audio.stopLowGlowWarning();
+  }
+
+  private updateFullMoonBlessing(deltaTime: number): void {
+    if (!this.isFullMoonBlessingActive) {
+      return;
+    }
+
+    this.fullMoonBlessingElapsedTime += deltaTime;
+    this.glow = this.maxGlow;
+    this.lockMoonShieldGlowIfFull();
+  }
+
+  private endFullMoonBlessing(): void {
+    if (!this.isFullMoonBlessingActive) {
+      return;
+    }
+
+    this.isFullMoonBlessingActive = false;
+    this.fullMoonBlessingVisualFadeOutTimer = this.fullMoonVisualFadeSeconds;
+    this.beginFullMoonShadowReturn();
+    this.pendingMoonRainPhaseChanges = this.moonRainDelayPhaseChangesAfterFullMoon;
+  }
+
+  private beginFullMoonShadowVanish(): void {
+    this.fullMoonShadowVisualState = 'vanishing';
+    this.fullMoonShadowTransitionTimer = 0;
+  }
+
+  private beginFullMoonShadowReturn(): void {
+    if (this.fullMoonShadowVisualState === 'normal') {
+      return;
+    }
+
+    this.fullMoonShadowVisualState = 'returning';
+    this.fullMoonShadowTransitionTimer = 0;
+  }
+
+  private updateFullMoonShadowTransition(deltaTime: number): void {
+    if (
+      this.fullMoonShadowVisualState !== 'vanishing' &&
+      this.fullMoonShadowVisualState !== 'returning'
+    ) {
+      return;
+    }
+
+    this.fullMoonShadowTransitionTimer = Math.min(
+      this.fullMoonShadowTransitionSeconds,
+      this.fullMoonShadowTransitionTimer + deltaTime,
+    );
+
+    if (this.fullMoonShadowTransitionTimer < this.fullMoonShadowTransitionSeconds) {
+      return;
+    }
+
+    this.fullMoonShadowVisualState =
+      this.fullMoonShadowVisualState === 'vanishing' ? 'hidden' : 'normal';
+    this.fullMoonShadowTransitionTimer = 0;
+  }
+
+  private getFullMoonShadowVisibility(): number {
+    switch (this.fullMoonShadowVisualState) {
+      case 'normal':
+        return 1;
+      case 'hidden':
+        return 0;
+      case 'vanishing':
+        return 1 - this.smoothStep(this.fullMoonShadowTransitionTimer / this.fullMoonShadowTransitionSeconds);
+      case 'returning':
+        return this.smoothStep(this.fullMoonShadowTransitionTimer / this.fullMoonShadowTransitionSeconds);
+    }
+  }
+
+  private areShadowsSuppressedByFullMoon(): boolean {
+    return this.isFullMoonBlessingActive || this.fullMoonShadowVisualState !== 'normal';
+  }
+
+  private advancePendingMoonRainDelay(): boolean {
+    if (this.pendingMoonRainPhaseChanges <= 0 || this.isFullMoonBlessingActive) {
+      return false;
+    }
+
+    this.pendingMoonRainPhaseChanges -= 1;
+
+    if (this.pendingMoonRainPhaseChanges > 0) {
+      return false;
+    }
+
+    this.startMoonRain();
+    return true;
+  }
+
+  private getFullMoonBlessingProgress(): number {
+    if (this.isFullMoonBlessingActive) {
+      return Math.max(
+        0,
+        Math.min(1, this.fullMoonBlessingElapsedTime / this.fullMoonBlessingMessageDurationSeconds),
+      );
+    }
+
+    return this.fullMoonBlessingVisualFadeOutTimer > 0 ? 1 : 0;
+  }
+
+  private getFullMoonBlessingIntensity(): number {
+    if (this.isFullMoonBlessingActive) {
+      return this.smoothStep(Math.max(0, Math.min(1, this.fullMoonBlessingElapsedTime / this.fullMoonVisualFadeSeconds)));
+    }
+
+    if (this.fullMoonBlessingVisualFadeOutTimer <= 0) {
+      return 0;
+    }
+
+    return this.smoothStep(Math.max(0, Math.min(1, this.fullMoonBlessingVisualFadeOutTimer / this.fullMoonVisualFadeSeconds)));
+  }
+
   private startMoonRain(): void {
     if (this.isMoonRainActive) {
       return;
@@ -998,6 +1277,7 @@ export class Game {
 
     this.isMoonRainActive = true;
     this.moonRainTimer = this.moonRainDurationSeconds;
+    this.moonRainVisualFadeOutTimer = 0;
     this.moonRainMessage = 'start';
     this.moonRainMessageTimer = this.moonRainMessageDuration;
     this.addMoonlightOrbsUntil(this.getTargetMoonlightOrbCount());
@@ -1018,6 +1298,7 @@ export class Game {
 
     this.isMoonRainActive = false;
     this.fullMoonTrialsSurvived += 1;
+    this.moonRainVisualFadeOutTimer = this.moonRainFadeOutSeconds;
     this.moonRainMessage = 'end';
     this.moonRainMessageTimer = this.moonRainMessageDuration;
     this.trimMoonlightOrbsTo(this.getMoonlightOrbCount());
@@ -1035,6 +1316,20 @@ export class Game {
     }
 
     return Math.max(0, Math.min(1, this.moonRainTimer / this.moonRainDurationSeconds));
+  }
+
+  private getMoonRainVisualIntensity(): number {
+    if (this.isMoonRainActive) {
+      const eventElapsed = this.moonRainDurationSeconds - this.moonRainTimer;
+
+      return this.smoothStep(Math.max(0, Math.min(1, eventElapsed / this.moonRainFadeInSeconds)));
+    }
+
+    if (this.moonRainVisualFadeOutTimer <= 0) {
+      return 0;
+    }
+
+    return this.smoothStep(Math.max(0, Math.min(1, this.moonRainVisualFadeOutTimer / this.moonRainFadeOutSeconds)));
   }
 
   private spawnMoonShieldPowerup(): void {
@@ -1124,6 +1419,7 @@ export class Game {
     this.glow = shouldOverflow
       ? this.maxGlow
       : Math.min(this.maxGlow, this.glow + this.glowSurgeRestoreAmount);
+    this.lockMoonShieldGlowIfFull();
     this.collectPulseTimer = this.collectPulseDuration;
     this.showTemporaryHudMessage('Glow x2', 'glowSurge');
     const willTriggerBloom = shouldOverflow && this.canTriggerBloomBurst(glowBeforeCollection);
@@ -1185,11 +1481,21 @@ export class Game {
 
   private restoreGlow(amount: number): void {
     this.glow = Math.min(this.maxGlow, this.glow + amount);
+    this.lockMoonShieldGlowIfFull();
     this.collectPulseTimer = this.collectPulseDuration;
 
     if (this.glow / this.maxGlow > this.lowGlowWarningThreshold) {
       this.audio.stopLowGlowWarning();
     }
+  }
+
+  private lockMoonShieldGlowIfFull(): void {
+    if (!this.isMoonShieldActive() || this.glow < this.maxGlow) {
+      return;
+    }
+
+    this.glow = this.maxGlow;
+    this.isMoonShieldGlowLocked = true;
   }
 
   private showTemporaryHudMessage(text: string, kind: HudMessageKind): void {
@@ -1241,7 +1547,25 @@ export class Game {
     return Math.max(min, Math.min(max, value));
   }
 
+  private smoothStep(progress: number): number {
+    const clampedProgress = this.clamp(progress, 0, 1);
+
+    return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
+  }
+
+  private isDevScenario(): boolean {
+    return this.devScenario !== 'none';
+  }
+
+  private getDevScenarioLabel(): string | null {
+    return getDevScenarioLabel(this.devScenario);
+  }
+
   private updateBestScore(): void {
+    if (this.isDevScenario()) {
+      return;
+    }
+
     if (this.score <= this.bestScore) {
       return;
     }

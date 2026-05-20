@@ -24,11 +24,15 @@ moonlit-firefly-bloom/
       runtime/
         m4a/
         mp3/
+  docs/
+    DEV_TESTING.md
   src/
     main.ts
     styles.css
     audio/
       AudioManager.ts
+    debug/
+      DevScenario.ts
     game/
       Game.ts
       types.ts
@@ -48,10 +52,11 @@ Keep the structure flexible. Avoid adding an engine layer unless the current fil
 ## Core Modules and Classes
 
 - `main.ts`: owns browser setup, canvas sizing, cursor visibility, pause triggers, and the animation frame loop.
-- `Game`: owns game state, update logic, run reset, score, powerups, Moon Rain, pause/resume, and render snapshots.
+- `Game`: owns game state, update logic, run reset, score, powerups, Full Moon Blessing, Moon Rain, pause/resume, developer scenarios, and render snapshots.
 - `Firefly`: player position, velocity, radius, glow, and movement update.
 - `MoonlightOrb`: collectible position, radius, value, and restore amount.
 - `ShadowHazard`: hazard position, radius or shape, damage behavior, and visual pulse.
+- `DevScenario`: parses hidden URL query parameters for event testing without changing normal runs.
 - `MoonShieldPowerup`: rare shield pickup.
 - `Powerup`: shared special pickup model for Moon Dash and Glow Surge/x2.
 - `InputManager`: keyboard, pointer, and touch state.
@@ -97,7 +102,7 @@ Shared:
 
 - Use a single full-screen or fixed-aspect canvas fitted to the viewport.
 - Draw background first.
-- Draw Moon Rain falling light behind gameplay objects.
+- Draw Full Moon atmosphere/firefly layers and Moon Rain falling light behind gameplay objects.
 - Draw shadows, moonlight orbs, powerups, and the firefly.
 - Draw the firefly glow and body last.
 - Draw UI overlays for score, glow meter, start, pause, and game over.
@@ -116,6 +121,7 @@ Visual priorities:
 - Firefly vs moonlight orb: collect, add score, restore glow, respawn orb.
 - Firefly vs shadow hazard: drain glow while overlapping.
 - Firefly vs powerup: apply the temporary/instant powerup effect, play feedback, and remove the pickup.
+- During Full Moon Blessing, shadow hazards remain in memory but transition to hidden/harmless, then return after the blessing ends.
 
 Avoid complex polygon collision in the MVP.
 
@@ -125,6 +131,7 @@ Avoid complex polygon collision in the MVP.
 - Add a small bonus for Bloom Burst.
 - Track current score in memory.
 - Track best score in `localStorage`.
+- Skip best score updates for hidden developer scenario runs.
 - Keep numbers easy to read.
 
 Example starting values:
@@ -170,6 +177,17 @@ Tune after playtesting.
 - While paused, do not advance gameplay timers, passive drain, shadow damage, powerup timers, Moon Rain timers, orb lifetimes, or audio warnings.
 - Resume on click/tap from the pause overlay.
 - Use a calm, in-world pause overlay so it feels like the firefly is waiting instead of the game breaking.
+
+## Developer Testing Plan
+
+- Hidden URL scenarios live behind query parameters only:
+  - `?devFullMoon=1`
+  - `?devMoonRain=1`
+  - `?devFullMoonSequence=1`
+- Developer scenarios still require click/tap Start so mobile audio can unlock normally.
+- Developer scenarios should not add menus, player-facing cheats, or settings.
+- Developer scenarios do not update local best score.
+- Keep `docs/DEV_TESTING.md` updated when adding or changing developer-only shortcuts.
 
 ## Future Mobile Packaging Note
 

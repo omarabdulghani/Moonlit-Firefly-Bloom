@@ -1,4 +1,4 @@
-import type { CanvasSize, ShadowHazardSnapshot, Vector2 } from './types';
+import type { CanvasSize, ShadowHazardSnapshot, ShadowVisualState, Vector2 } from './types';
 
 export type ShadowSpawnAvoidPoint = Vector2 & {
   safeDistance: number;
@@ -58,11 +58,13 @@ export class ShadowHazard {
     this.keepInside(bounds);
   }
 
-  getSnapshot(): ShadowHazardSnapshot {
+  getSnapshot(visibility = 1, visualState: ShadowVisualState = 'normal'): ShadowHazardSnapshot {
     return {
       x: this.x,
       y: this.y,
       radius: this.radius,
+      visibility,
+      visualState,
     };
   }
 

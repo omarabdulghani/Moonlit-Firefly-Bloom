@@ -310,6 +310,118 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Preserve Moon Rain duration, extra orb count, shadow speed behavior, scoring, sounds, powerups, HUD, controls, and background placement.
 - [x] Avoid new mechanics, powerups, enemies, sounds, menus, upgrades, monetization, PWA, and app packaging.
 
+## Phase 10.4: Moon Rain Visual Fade Polish
+
+- [x] Add a short visual fade-in when Moon Rain begins.
+- [x] Add a short visual fade-out after Moon Rain gameplay ends.
+- [x] Keep fade-out visual-only so extra orbs and shadow speed end on the existing Moon Rain timer.
+- [x] Keep the falling moonlight subtle and behind gameplay objects and HUD.
+- [x] Preserve Moon Rain trigger timing, duration, sounds, extra orb behavior, shadow speed behavior, stats, scoring, powerups, controls, and UI.
+- [x] Avoid new mechanics, powerups, enemies, sounds, menus, upgrades, monetization, PWA, and app packaging.
+
+## Phase 10.5: Full Moon Blessing and Delayed Moon Rain
+
+- [x] Add Full Moon Blessing as a short reward event on later Full Moons only.
+- [x] Keep Night 1 Full Moon as a calm opening mood with no blessing or Moon Rain.
+- [x] Fill glow to maximum when Full Moon Blessing starts.
+- [x] Pause passive glow drain and shadow glow drain during Full Moon Blessing.
+- [x] Add centered soft `Full Moon` blessing text.
+- [x] Add a few pulsing special sky stars during Full Moon Blessing.
+- [x] Blend the glow meter toward moon-white while the blessing is active.
+- [x] Schedule Moon Rain after two later moon phase changes instead of starting it during Full Moon.
+- [x] Keep Moon Rain independent once started and increase its duration slightly.
+- [x] Make Moon Rain build and thin out by drop density, not only opacity.
+- [x] Preserve Moon Rain sounds, scoring, powerups, controls, HUD layout, background assets, and reset flow.
+- [x] Defer future ideas like lantern bugs, constellations, new rewards, and new challenge types.
+- [x] Avoid new powerups, enemies, menus, shops, ads, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.6: Full Moon Blessing Duration and Moon Rain Density Correction
+
+- [x] Tie Full Moon Blessing duration to the whole later Full Moon phase instead of a short timer.
+- [x] Keep Night 1 Full Moon calm, with no Full Moon Blessing or Moon Rain.
+- [x] Keep glow filled and protected for the entire later Full Moon phase.
+- [x] Keep the glow meter moon-white for the full blessing, with Moon Shield blue as the next priority after blessing ends.
+- [x] Show Full Moon reward text as a graceful start-of-phase animation.
+- [x] Keep special Full Moon stars visible and pulsing for the whole blessing phase.
+- [x] Add subtle decorative lantern-bug/firefly glows during Full Moon Blessing.
+- [x] Fade Full Moon stars, lantern bugs, and meter styling in and out smoothly.
+- [x] Keep Moon Rain delayed until the configured later phase changes and independent once started.
+- [x] Make Moon Rain begin from sparse upper-sky drops and build by density.
+- [x] Make Moon Rain end by thinning visible drops and stopping respawns during visual fade-out.
+- [x] Preserve Moon Rain sounds, gameplay timing, scoring, powerups, controls, HUD layout, background assets, and reset flow.
+- [x] Avoid new gameplay systems, powerups, enemies, menus, audio files, image assets, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.7: Full Moon Ambient Fireflies and Shield Glow-Lock Correction
+
+- [x] Add small warm ambient fireflies during later Full Moon Blessing.
+- [x] Keep ambient fireflies decorative, non-collectible, and smaller than gameplay collectibles.
+- [x] Group ambient fireflies into loose slow-drifting clusters.
+- [x] Fade ambient fireflies in and out with the Full Moon Blessing visuals.
+- [x] Slow the lantern-bug/constellation drift and pulse animation for a calmer feel.
+- [x] Add a Moon Shield max-glow lock that activates only once shielded glow reaches full.
+- [x] Lock glow at max for the remaining shield duration if Moon Shield is collected while already full.
+- [x] Keep score, collection, Bloom Burst, Night progression, sounds, and powerup effects working normally while shielded.
+- [x] Clear the Moon Shield glow lock when the shield expires or a new run starts.
+- [x] Preserve visual priority: Full Moon moon-white, then Moon Shield blue, then normal gold.
+- [x] Avoid new gameplay systems, powerups, enemies, menus, audio files, image assets, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.8: Full Moon Event Art-Direction Cleanup
+
+- [x] Shift Full Moon visual direction toward `Moon Blessing on the Balcony`.
+- [x] Reduce sky clutter by removing visible constellation connecting lines.
+- [x] Keep remaining lantern-bug sky detail faint, sparse, and secondary.
+- [x] Move ambient Full Moon firefly clusters toward the left/right plant and balcony edge areas.
+- [x] Keep ambient fireflies small, warm, non-collectible, and less prominent than gameplay objects.
+- [x] Add a subtle silver-blue moonwash during Full Moon Blessing.
+- [x] Stagger special star reveal so the sky responds gently instead of popping on at once.
+- [x] Stagger plant-side firefly cluster reveal and settling for a softer awakening/ending feel.
+- [x] Refine the `Full Moon` title into a smaller glow-gather/shimmer moment.
+- [x] Preserve Full Moon Blessing timing, glow protection, Moon Rain delay, Moon Rain duration, audio, controls, scoring, and reset behavior.
+- [x] Avoid new gameplay systems, powerups, enemies, menus, audio files, image assets, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.8.1: Full Moon Event Cleanup / Correction Pass
+
+- [x] Remove the visible lower-screen rectangular moonwash block.
+- [x] Keep any Full Moon atmosphere wash soft, edge-free, and non-boxy.
+- [x] Replace the bad `Full Moon` pill/banner treatment with elegant text-only glow styling.
+- [x] Rework ambient Full Moon fireflies into small plant-side balcony fireflies.
+- [x] Make decorative fireflies warmer, glowier, and visibly animated with upward drift, wandering, and pulsing.
+- [x] Keep decorative fireflies near side plants and balcony edges instead of filling the sky.
+- [x] Preserve the cleaner reduced-sky-clutter direction from Phase 10.8.
+- [x] Preserve gameplay timing, glow protection, Moon Rain delay, controls, scoring, audio mappings, and assets.
+- [x] Avoid new gameplay systems, powerups, enemies, menus, audio files, image assets, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.8.2: Full Moon Decorative Fireflies Refinement
+
+- [x] Move decorative Full Moon fireflies tighter into the side plant and lower balcony foreground zones.
+- [x] Reduce remaining sky lantern glows so they do not read as the main firefly effect.
+- [x] Rework firefly motion around stable anchors with smooth oval, figure-eight, and hovering sine motion.
+- [x] Remove the old wrapping upward drift that could look jittery or fragmented.
+- [x] Increase warm moon-gold firefly glow, halo, and tiny bright cores while keeping them smaller than collectibles.
+- [x] Add a very subtle warm plant-side haze during Full Moon Blessing.
+- [x] Keep mobile counts lower and the center play area readable.
+- [x] Preserve gameplay, Full Moon timing, Moon Rain logic, HUD, audio, controls, scoring, assets, and reset behavior.
+- [x] Avoid new gameplay systems, powerups, enemies, menus, audio files, image assets, monetization, PWA, Capacitor, and app packaging.
+
+## Phase 10.8.3: Full Moon Shadow Disappearance Polish
+
+- [x] Add a Full Moon shadow visual state for normal, vanishing, hidden, and returning.
+- [x] Make shadows become harmless as soon as the Full Moon vanish begins.
+- [x] Animate shadows inward with shrinking radius and fading opacity when Full Moon begins.
+- [x] Keep shadows hidden for the duration of the later Full Moon Blessing.
+- [x] Animate shadows back from a small dark seed when Full Moon ends.
+- [x] Keep shadow damage disabled until the return transition finishes.
+- [x] Preserve existing shadow entities instead of replacing them with unrelated spawns.
+- [x] Preserve movement, scoring, powerups, moon phase timing, Moon Rain logic, HUD, audio, controls, and assets.
+- [x] Avoid new gameplay systems, enemies, powerups, menus, sound changes, monetization, PWA, Capacitor, and app packaging.
+
+## Visual Tuning: Larger Side Plants
+
+- [x] Increase the left and right plant asset scale by 50% for the whole game.
+- [x] Keep plants bottom-anchored as decorative background/foreground atmosphere.
+- [x] Adjust Full Moon decorative firefly clusters to keep their relative placement around the enlarged plant zones.
+- [x] Preserve gameplay, Full Moon logic, Moon Rain logic, HUD, audio, controls, scoring, and assets.
+
 ## Phase 11: Essential Sound Effects
 
 - [x] Copy WAV files into a Vite public sound path with clean runtime names.
@@ -379,6 +491,16 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Stop the low-glow heartbeat warning immediately when glow recovers above the warning threshold.
 - [x] Stop the low-glow warning on pause, game over, and restart.
 - [x] Preserve gameplay tuning, scoring, powerups, background, and mobile controls.
+
+## Phase 12.4b: Shield-Linked Glow Meter Visual Feedback
+
+- [x] Reuse the existing Moon Shield cyan/blue color identity for protected glow meter styling.
+- [x] Blend the glow meter toward shield blue while Moon Shield is active.
+- [x] Add a soft protective blue glow to the meter fill while shielded.
+- [x] Smoothly ease the shield-blue meter state in and out with the shield timer.
+- [x] Keep Full Moon Blessing moon-white styling higher priority than Moon Shield blue.
+- [x] Preserve Moon Shield duration, protection logic, glow values, spawn timing, scoring, HUD layout, audio, and controls.
+- [x] Avoid new mechanics, powerups, menus, sounds, assets, monetization, PWA, Capacitor, and app packaging.
 
 ## Phase 12.5: Shield Drain Protection and Shadow Hit Drama
 
@@ -479,6 +601,18 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Add `legal/THIRD_PARTY_LICENSES.md` for package license tracking.
 - [x] Add `legal/APP_STORE_IP_CHECKLIST.md` for future commercial and app store readiness.
 - [x] Avoid gameplay, asset, dependency, build, UI, audio behavior, and feature changes.
+
+## Phase 15.1: Developer Event Test Shortcuts
+
+- [x] Add hidden URL query parsing for developer-only event scenarios.
+- [x] Support `?devFullMoon=1` to start a run at a later Full Moon Blessing test state.
+- [x] Support `?devMoonRain=1` to start a run with Moon Rain active immediately.
+- [x] Support `?devFullMoonSequence=1` to quickly test Full Moon Blessing into delayed Moon Rain.
+- [x] Keep normal gameplay unchanged when no dev query parameter is present.
+- [x] Skip local best score saving during developer scenario runs.
+- [x] Add a tiny dev-only scenario label while a dev scenario is active.
+- [x] Document the developer shortcuts in `docs/DEV_TESTING.md`.
+- [x] Avoid player-facing menus, settings, cheats, monetization, leaderboard, PWA, Capacitor, new systems, new audio, and new assets.
 
 ## Project Hygiene
 

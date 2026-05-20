@@ -36,7 +36,7 @@ Moonlit Firefly Bloom is a soothing, cozy, calming arcade game for winding down.
 2. Fly through the garden collecting moonlight.
 3. Avoid shadows while managing the glow meter.
 4. Use moonlight and powerups to recover, move faster, or trigger Bloom Burst.
-5. Survive deeper Night Levels and later Full Moon/Moon Rain moments.
+5. Survive deeper Night Levels, later Full Moon Blessings, and delayed Moon Rain moments.
 6. Lose when glow reaches zero.
 7. See final score, best score, orbs collected, Bloom Bursts, deepest Night, and Full Moons survived.
 8. Retry immediately.
@@ -85,8 +85,11 @@ Powerups are temporary run-only pickups. They are not upgrades, inventory items,
 
 - Night Level rises through Bloom Burst progress and gradually increases pressure.
 - The moon phase changes with Night Level.
-- Later Full Moons can trigger Moon Rain.
-- Moon Rain temporarily adds more moonlight orbs, slightly increases shadow pressure, plays ambience, and shows subtle falling moonlight.
+- Later Full Moons trigger Full Moon Blessing, a protected magical state that fills and preserves glow.
+- During Full Moon Blessing, shadows visually vanish and remain harmless until they softly reform after the blessing ends.
+- Full Moon Blessing uses moon-white glow meter styling, subtle moonwash, special stars, and plant-side decorative fireflies to make the balcony feel alive.
+- Moon Rain is a delayed after-event following later Full Moons, not the same moment as Full Moon Blessing.
+- Moon Rain temporarily adds more moonlight orbs, slightly increases shadow pressure, plays ambience, and shows falling moonlight that builds and thins by drop density.
 
 These systems should make runs feel alive without becoming a separate mode.
 
@@ -118,7 +121,9 @@ Progression systems are intentionally out of scope for the MVP.
 - Cool moonlight orbs.
 - Shadow hazards should be dark, legible, and visually distinct from the background.
 - Powerups should be visually distinct: shield blue, dash green, x2 gold.
-- Ambient birds, stars, and shooting stars should support the mood without distracting from gameplay.
+- Enlarged side plants should make the balcony garden feel cozy without blocking gameplay.
+- Ambient birds, stars, Full Moon fireflies, and shooting stars should support the mood without distracting from gameplay.
+- Full Moon decorative fireflies should stay near the side plant/foreground zones and feel like environmental life, not collectibles.
 - UI should be minimal and calm.
 
 The visuals should be atmospheric but never obscure gameplay readability.
@@ -154,7 +159,7 @@ Resume should feel gentle and personal: the firefly is waiting, the night is hol
 
 - Movement may feel too floaty or too stiff.
 - Shadows could feel unfair on small screens.
-- The arena could feel too busy if ambient birds, stars, Moon Rain, and reward effects become too visible.
+- The arena could feel too busy if ambient birds, stars, Full Moon fireflies, Moon Rain, and reward effects become too visible.
 - The game could become overbuilt before the core loop is fun.
 - Mobile controls could lag behind desktop unless tested early.
 - Powerups could become too generous before the base loop proves itself.

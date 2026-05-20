@@ -42,6 +42,13 @@ Instructions for future AI coding agents working on Moonlit Firefly Bloom.
 - Preserve mobile audio reliability rules: unlock/prime from real user gestures, keep gameplay non-blocking, use fresh Web Audio one-shot sources, and let sounds finish naturally.
 - Keep `?audioDebug=1` diagnostics available for mobile browser audio investigation.
 
+## Developer Testing Workflow
+
+- Keep event test helpers hidden behind URL query parameters only, not player-facing menus or cheat UI.
+- Current event test shortcuts are documented in `docs/DEV_TESTING.md`.
+- Developer scenario runs must not update local best score or future public/leaderboard records.
+- Normal gameplay must remain unchanged when no developer query parameter is present.
+
 ## Coding Guidance
 
 - Use clear TypeScript.

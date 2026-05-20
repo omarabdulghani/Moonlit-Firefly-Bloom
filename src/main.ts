@@ -1,5 +1,6 @@
 import './styles.css';
 import { AudioManager } from './audio/AudioManager';
+import { getDevScenarioFromSearch } from './debug/DevScenario';
 import { Game } from './game/Game';
 import { InputManager } from './input/InputManager';
 import { CanvasRenderer } from './render/CanvasRenderer';
@@ -13,6 +14,7 @@ if (!canvas) {
 const input = new InputManager(canvas);
 const renderer = new CanvasRenderer(canvas);
 const audio = new AudioManager();
+const devScenario = getDevScenarioFromSearch(window.location.search);
 const cursorRevealDurationMs = 1200;
 let isPlaying = false;
 let cursorRevealTimer: number | undefined;
@@ -38,7 +40,7 @@ const game = new Game(renderer, input, audio, (state) => {
   input.setGameState(state);
   document.body.classList.toggle('game-is-playing', isPlaying);
   hideGameplayCursor();
-});
+}, { devScenario });
 
 const primePointerAudio = (event: Event) => {
   game.primeAudioFromUserGesture(event.type);

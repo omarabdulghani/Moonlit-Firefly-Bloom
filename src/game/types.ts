@@ -55,7 +55,11 @@ export type ShadowHazardSnapshot = {
   x: number;
   y: number;
   radius: number;
+  visibility: number;
+  visualState: ShadowVisualState;
 };
+
+export type ShadowVisualState = 'normal' | 'vanishing' | 'hidden' | 'returning';
 
 export type BloomBurstSnapshot = {
   x: number;
@@ -115,8 +119,12 @@ export type RenderSnapshot = {
   moonPhaseName: MoonPhaseName;
   moonPhaseTransitionProgress: number;
   moonPhaseMessageProgress: number;
+  isFullMoonBlessingActive: boolean;
+  fullMoonBlessingProgress: number;
+  fullMoonBlessingIntensity: number;
   isMoonRainActive: boolean;
   moonRainProgress: number;
+  moonRainVisualIntensity: number;
   moonRainMessage: MoonRainMessage;
   moonRainMessageProgress: number;
   glow: number;
@@ -137,4 +145,5 @@ export type RenderSnapshot = {
   firefly: FireflySnapshot | null;
   moonlightOrbs: MoonlightOrbSnapshot[];
   shadowHazards: ShadowHazardSnapshot[];
+  devScenarioLabel: string | null;
 };

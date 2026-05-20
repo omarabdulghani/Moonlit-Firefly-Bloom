@@ -3,6 +3,7 @@ import type {
   HudMessageKind,
   PowerupType,
   RenderSnapshot,
+  ShadowVisualState,
   VirtualJoystickSnapshot,
 } from '../game/types';
 
@@ -56,6 +57,31 @@ interface ShootingStar {
   alpha: number;
 }
 
+interface FullMoonLanternBug {
+  x: number;
+  y: number;
+  phase: number;
+  driftX: number;
+  driftY: number;
+  radius: number;
+  alpha: number;
+}
+
+interface FullMoonAmbientFirefly {
+  x: number;
+  y: number;
+  phase: number;
+  clusterPhase: number;
+  orbitX: number;
+  orbitY: number;
+  wanderX: number;
+  wanderY: number;
+  speed: number;
+  pulseSpeed: number;
+  radius: number;
+  alpha: number;
+}
+
 interface SourceCrop {
   x: number;
   y: number;
@@ -68,6 +94,17 @@ const BACKGROUND_ASSET_PATHS: Record<BackgroundAssetName, string> = {
   railing: '/assets/background/railing.png',
   plantLeft: '/assets/background/plant-left.png',
   plantRight: '/assets/background/plant-right.png',
+};
+const BACKGROUND_PLANT_VISUAL_SCALE = 1.5;
+
+const MOON_SHIELD_COLORS = {
+  glowCore: 'rgba(220, 255, 255, 0.84)',
+  glowMid: 'rgba(115, 225, 238, 0.34)',
+  glowClear: 'rgba(115, 225, 238, 0)',
+  strokeBright: 'rgba(226, 255, 255, 0.92)',
+  fillLight: 'rgba(224, 255, 255, 0.9)',
+  fillMid: 'rgba(107, 221, 245, 0.78)',
+  fillDeep: 'rgba(48, 146, 222, 0.82)',
 };
 
 const BACKGROUND_STARS: readonly BackgroundStar[] = [
@@ -97,6 +134,51 @@ const ALL_BACKGROUND_STARS: readonly BackgroundStar[] = [
   ...EXTRA_BACKGROUND_STARS,
   ...BACKGROUND_STARS,
 ];
+
+const FULL_MOON_BLESSING_STARS: readonly BackgroundStar[] = [
+  { x: 0.3, y: 0.13, radius: 1.35, alpha: 0.34, glint: true, twinklePhase: 0.2 },
+  { x: 0.48, y: 0.19, radius: 1.55, alpha: 0.38, glint: true, twinklePhase: 1.4 },
+  { x: 0.63, y: 0.1, radius: 1.3, alpha: 0.32, glint: true, twinklePhase: 2.2 },
+  { x: 0.76, y: 0.28, radius: 1.45, alpha: 0.34, glint: true, twinklePhase: 3.1 },
+  { x: 0.87, y: 0.16, radius: 1.28, alpha: 0.3, glint: true, twinklePhase: 4.3 },
+  { x: 0.39, y: 0.32, radius: 1.05, alpha: 0.24, twinklePhase: 5.2 },
+];
+
+const FULL_MOON_LANTERN_BUGS: readonly FullMoonLanternBug[] = [
+  { x: 0.42, y: 0.22, phase: 0.2, driftX: 11, driftY: 7, radius: 1.12, alpha: 0.18 },
+  { x: 0.5, y: 0.29, phase: 1.1, driftX: 12, driftY: 6, radius: 1.24, alpha: 0.2 },
+  { x: 0.58, y: 0.21, phase: 2.3, driftX: 10, driftY: 8, radius: 1.02, alpha: 0.16 },
+  { x: 0.66, y: 0.3, phase: 3.4, driftX: 11, driftY: 7, radius: 1.12, alpha: 0.18 },
+  { x: 0.73, y: 0.24, phase: 4.2, driftX: 9, driftY: 8, radius: 1.04, alpha: 0.15 },
+];
+
+const FULL_MOON_AMBIENT_FIREFLY_CLUSTERS = [
+  { x: 0.098, y: 0.655 },
+  { x: 0.202, y: 0.55 },
+  { x: 0.798, y: 0.55 },
+  { x: 0.902, y: 0.655 },
+] as const;
+
+const FULL_MOON_AMBIENT_FIREFLIES: readonly FullMoonAmbientFirefly[] = Array.from({ length: 12 }, (_, index) => {
+  const cluster = FULL_MOON_AMBIENT_FIREFLY_CLUSTERS[index % FULL_MOON_AMBIENT_FIREFLY_CLUSTERS.length];
+  const spreadX = (seededNoise(index * 12.9 + 1.8) - 0.5) * 0.052;
+  const spreadY = (seededNoise(index * 17.6 + 5.2) - 0.5) * 0.05;
+
+  return {
+    x: cluster.x + spreadX,
+    y: cluster.y + spreadY,
+    phase: seededNoise(index * 21.3 + 4.4) * Math.PI * 2,
+    clusterPhase: (index % FULL_MOON_AMBIENT_FIREFLY_CLUSTERS.length) * 1.4,
+    orbitX: 8 + seededNoise(index * 19.6 + 0.9) * 18,
+    orbitY: 6 + seededNoise(index * 23.7 + 1.6) * 15,
+    wanderX: 4 + seededNoise(index * 28.2 + 3.8) * 10,
+    wanderY: 3 + seededNoise(index * 33.9 + 6.1) * 8,
+    speed: 0.34 + seededNoise(index * 41.2 + 2.3) * 0.24,
+    pulseSpeed: 0.55 + seededNoise(index * 47.8 + 4.7) * 0.22,
+    radius: 0.9 + seededNoise(index * 31.1 + 2.7) * 0.5,
+    alpha: 0.58 + seededNoise(index * 37.4 + 8.1) * 0.22,
+  };
+});
 
 const NIGHT_BIRDS: readonly NightBird[] = [
   { startXRatio: 0.08, yRatio: 0.17, speed: 14, scale: 0.82, phase: 0.4, alpha: 0.42, direction: 1, xWander: 34, yWanderRatio: 0.018, flapRate: 5.1 },
@@ -170,11 +252,30 @@ export class CanvasRenderer {
       snapshot.moonPhaseIndex,
       snapshot.moonPhaseTransitionProgress,
     );
+    this.drawFullMoonMoonwash(snapshot.fullMoonBlessingProgress, snapshot.fullMoonBlessingIntensity);
+    this.drawFullMoonBlessingStars(
+      snapshot.elapsedTime,
+      snapshot.fullMoonBlessingProgress,
+      snapshot.fullMoonBlessingIntensity,
+    );
+    this.drawFullMoonAmbientFireflies(
+      snapshot.elapsedTime,
+      snapshot.fullMoonBlessingProgress,
+      snapshot.fullMoonBlessingIntensity,
+    );
+    this.drawFullMoonLanternBugs(snapshot.elapsedTime, snapshot.fullMoonBlessingIntensity);
 
     this.drawMoonRainEffect(snapshot);
 
     for (const hazard of snapshot.shadowHazards) {
-      this.drawShadowHazard(hazard.x, hazard.y, hazard.radius);
+      this.drawShadowHazard(
+        hazard.x,
+        hazard.y,
+        hazard.radius,
+        hazard.visibility,
+        hazard.visualState,
+        snapshot.elapsedTime,
+      );
     }
 
     if (snapshot.bloomBurst) {
@@ -473,6 +574,20 @@ export class CanvasRenderer {
     return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
   }
 
+  private easeInOut(progress: number): number {
+    const clampedProgress = Math.max(0, Math.min(1, progress));
+
+    return clampedProgress * clampedProgress * (3 - 2 * clampedProgress);
+  }
+
+  private staggeredReveal(progress: number, delay: number, duration: number): number {
+    if (duration <= 0) {
+      return progress >= delay ? 1 : 0;
+    }
+
+    return this.easeInOut((progress - delay) / duration);
+  }
+
   private easeOutCubic(progress: number): number {
     const clampedProgress = Math.max(0, Math.min(1, progress));
 
@@ -603,6 +718,235 @@ export class CanvasRenderer {
     ctx.beginPath();
     ctx.arc(headX, headY, 1.8, 0, Math.PI * 2);
     ctx.fill();
+    ctx.restore();
+  }
+
+  private drawFullMoonMoonwash(progress: number, intensity: number): void {
+    if (intensity <= 0) {
+      return;
+    }
+
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const arrival = this.staggeredReveal(progress, 0, 0.38);
+    const alpha = intensity * arrival;
+    const wash = ctx.createRadialGradient(
+      width * 0.72,
+      height * 0.16,
+      0,
+      width * 0.72,
+      height * 0.16,
+      Math.max(width, height) * 1.05,
+    );
+
+    wash.addColorStop(0, `rgba(224, 239, 255, ${0.032 * alpha})`);
+    wash.addColorStop(0.48, `rgba(182, 211, 255, ${0.016 * alpha})`);
+    wash.addColorStop(1, 'rgba(182, 211, 255, 0)');
+
+    ctx.save();
+    ctx.fillStyle = wash;
+    ctx.fillRect(0, 0, width, height);
+    ctx.restore();
+  }
+
+  private drawFullMoonBlessingStars(
+    elapsedTime: number,
+    progress: number,
+    intensity: number,
+  ): void {
+    if (intensity <= 0) {
+      return;
+    }
+
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const stars = width < 520 ? FULL_MOON_BLESSING_STARS.slice(0, 4) : FULL_MOON_BLESSING_STARS;
+    const overallArrival = this.staggeredReveal(progress, 0.08, 0.6);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.fillStyle = '#fff8d4';
+    ctx.strokeStyle = '#fff8d4';
+    ctx.lineWidth = 1;
+
+    for (let index = 0; index < stars.length; index += 1) {
+      const star = stars[index];
+      const reveal = this.staggeredReveal(progress, 0.12 + index * 0.075, 0.34);
+      const settleReveal = this.staggeredReveal(intensity, index * 0.05, 0.42);
+      const pulse = 0.82 + Math.sin(elapsedTime * 0.55 + (star.twinklePhase ?? 0)) * 0.18;
+      const alpha = star.alpha * intensity * settleReveal * overallArrival * reveal * pulse;
+      const radius = star.radius * (1 + reveal * 0.22) * Math.max(0.86, Math.min(1.18, width / 980));
+      const x = star.x * width;
+      const y = star.y * height;
+
+      ctx.globalAlpha = alpha;
+      ctx.shadowColor = `rgba(255, 248, 214, ${0.42 * intensity})`;
+      ctx.shadowBlur = 10 + 8 * intensity;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (star.glint) {
+        const glintSize = radius * (3.2 + reveal * 1.2);
+
+        ctx.globalAlpha = alpha * 0.54;
+        ctx.beginPath();
+        ctx.moveTo(x - glintSize, y);
+        ctx.lineTo(x + glintSize, y);
+        ctx.moveTo(x, y - glintSize);
+        ctx.lineTo(x, y + glintSize);
+        ctx.stroke();
+      }
+    }
+
+    ctx.restore();
+  }
+
+  private drawFullMoonAmbientFireflies(
+    elapsedTime: number,
+    progress: number,
+    intensity: number,
+  ): void {
+    if (intensity <= 0) {
+      return;
+    }
+
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const fireflies = width < 520
+      ? FULL_MOON_AMBIENT_FIREFLIES.slice(0, 7)
+      : FULL_MOON_AMBIENT_FIREFLIES;
+    const responsiveMotionScale = width < 520 ? 0.72 : 1;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    this.drawFullMoonPlantFireflyGlow(progress, intensity);
+
+    for (let index = 0; index < fireflies.length; index += 1) {
+      const firefly = fireflies[index];
+      const clusterIndex = index % FULL_MOON_AMBIENT_FIREFLY_CLUSTERS.length;
+      const reveal = this.staggeredReveal(progress, 0.18 + clusterIndex * 0.08, 0.38);
+      const settleReveal = this.staggeredReveal(intensity, clusterIndex * 0.06, 0.48);
+      const time = elapsedTime * firefly.speed;
+      const ovalX = Math.sin(time + firefly.phase) * firefly.orbitX;
+      const ovalY = Math.sin(time * 0.82 + firefly.phase * 1.4) * firefly.orbitY;
+      const figureEightX = Math.sin(time * 0.52 + firefly.phase * 0.7) * firefly.wanderX;
+      const hoverY = Math.cos(time * 0.44 + firefly.phase * 1.9) * firefly.wanderY;
+      const entranceLift = (1 - reveal) * (width < 520 ? 14 : 20);
+      const settlingY = (1 - intensity) * (7 + clusterIndex * 2);
+      const x = firefly.x * width + (ovalX + figureEightX) * responsiveMotionScale;
+      const y = firefly.y * height + (ovalY + hoverY) * responsiveMotionScale + entranceLift + settlingY;
+      const pulse = 0.74 + Math.sin(elapsedTime * firefly.pulseSpeed + firefly.phase) * 0.26;
+      const alpha = firefly.alpha * intensity * settleReveal * reveal * pulse;
+      const radius = firefly.radius * Math.max(0.82, Math.min(1.12, width / 980));
+      const glowRadius = radius * (12.5 + pulse * 5.2);
+
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+      glow.addColorStop(0, `rgba(255, 244, 171, ${0.84 * alpha})`);
+      glow.addColorStop(0.34, `rgba(255, 207, 91, ${0.32 * alpha})`);
+      glow.addColorStop(1, 'rgba(255, 196, 78, 0)');
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(255, 246, 181, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(255, 255, 232, ${0.68 * alpha})`;
+      ctx.beginPath();
+      ctx.arc(x - radius * 0.18, y - radius * 0.22, radius * 0.36, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+  }
+
+  private drawFullMoonPlantFireflyGlow(progress: number, intensity: number): void {
+    if (intensity <= 0) {
+      return;
+    }
+
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const sideGlowAlpha = 0.1 * intensity * this.staggeredReveal(progress, 0.14, 0.42);
+    const glows = width < 520
+      ? [
+          { x: 0.16, y: 0.64, radiusX: 0.22, radiusY: 0.19 },
+          { x: 0.84, y: 0.64, radiusX: 0.22, radiusY: 0.19 },
+        ]
+      : [
+          { x: 0.15, y: 0.64, radiusX: 0.2, radiusY: 0.2 },
+          { x: 0.85, y: 0.64, radiusX: 0.2, radiusY: 0.2 },
+        ];
+
+    for (const glowAnchor of glows) {
+      const x = glowAnchor.x * width;
+      const y = glowAnchor.y * height;
+      const radius = Math.max(width * glowAnchor.radiusX, height * glowAnchor.radiusY);
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, radius);
+
+      glow.addColorStop(0, `rgba(255, 209, 90, ${sideGlowAlpha})`);
+      glow.addColorStop(0.42, `rgba(255, 191, 75, ${sideGlowAlpha * 0.3})`);
+      glow.addColorStop(1, 'rgba(255, 191, 75, 0)');
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  private drawFullMoonLanternBugs(elapsedTime: number, intensity: number): void {
+    if (intensity <= 0) {
+      return;
+    }
+
+    const { width, height } = this.size;
+    const ctx = this.context;
+    const bugs = width < 520 ? FULL_MOON_LANTERN_BUGS.slice(0, 6) : FULL_MOON_LANTERN_BUGS;
+    const constellationDriftSpeed = 0.14;
+    const constellationOrbitSpeed = 0.08;
+    const constellationPulseSpeed = 0.7;
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+
+    for (let index = 0; index < bugs.length; index += 1) {
+      const bug = bugs[index];
+      const driftX =
+        Math.sin(elapsedTime * constellationDriftSpeed + bug.phase) * bug.driftX +
+        Math.sin(elapsedTime * constellationOrbitSpeed + bug.phase * 1.7) * bug.driftX * 0.45;
+      const driftY =
+        Math.cos(elapsedTime * constellationDriftSpeed * 0.85 + bug.phase) * bug.driftY +
+        Math.sin(elapsedTime * constellationOrbitSpeed * 1.15 + bug.phase * 1.3) * bug.driftY * 0.35;
+      const x = bug.x * width + driftX;
+      const y = bug.y * height + driftY;
+      const pulse = 0.74 + Math.sin(elapsedTime * constellationPulseSpeed + bug.phase) * 0.26;
+      const alpha = bug.alpha * intensity * pulse * 0.22;
+      const radius = bug.radius * Math.max(0.82, Math.min(1.12, width / 960));
+      const glowRadius = radius * 7.2;
+
+      const glow = ctx.createRadialGradient(x, y, 0, x, y, glowRadius);
+      glow.addColorStop(0, `rgba(255, 247, 194, ${0.5 * alpha})`);
+      glow.addColorStop(0.45, `rgba(212, 235, 255, ${0.18 * alpha})`);
+      glow.addColorStop(1, 'rgba(212, 235, 255, 0)');
+
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(255, 249, 210, ${0.9 * alpha})`;
+      ctx.beginPath();
+      ctx.arc(x, y, radius, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.restore();
   }
 
@@ -744,10 +1088,11 @@ export class CanvasRenderer {
       return;
     }
 
-    const plantHeight = Math.max(
+    const basePlantHeight = Math.max(
       110,
       Math.min(height * (width < 520 ? 0.22 : 0.31), width * 0.34),
     );
+    const plantHeight = basePlantHeight * BACKGROUND_PLANT_VISUAL_SCALE;
 
     if (leftAsset.isLoaded) {
       this.drawCroppedBackgroundAsset(
@@ -803,7 +1148,7 @@ export class CanvasRenderer {
   }
 
   private drawMoonRainEffect(snapshot: RenderSnapshot): void {
-    if (!snapshot.isMoonRainActive) {
+    if (snapshot.moonRainVisualIntensity <= 0) {
       this.moonRainWasActive = false;
       this.moonRainLastElapsedTime = snapshot.elapsedTime;
       this.moonRainDrops.length = 0;
@@ -826,8 +1171,8 @@ export class CanvasRenderer {
 
     this.moonRainWasActive = true;
     this.moonRainLastElapsedTime = snapshot.elapsedTime;
-    this.updateMoonRainDrops(deltaTime);
-    this.renderMoonRainDrops(snapshot.moonRainProgress);
+    this.updateMoonRainDrops(deltaTime, snapshot.isMoonRainActive);
+    this.renderMoonRainDrops(snapshot.moonRainVisualIntensity);
   }
 
   private initializeMoonRainDrops(): void {
@@ -841,7 +1186,7 @@ export class CanvasRenderer {
     }
   }
 
-  private updateMoonRainDrops(deltaTime: number): void {
+  private updateMoonRainDrops(deltaTime: number, allowRespawn: boolean): void {
     const { width, height } = this.size;
 
     for (const drop of this.moonRainDrops) {
@@ -849,14 +1194,21 @@ export class CanvasRenderer {
       drop.y += drop.speed * deltaTime;
 
       if (drop.y - drop.length > height || drop.x < -40 || drop.x > width + 40) {
-        Object.assign(drop, this.createMoonRainDrop(false));
+        if (allowRespawn) {
+          Object.assign(drop, this.createMoonRainDrop(false));
+        } else {
+          drop.alpha = 0;
+        }
       }
     }
   }
 
-  private renderMoonRainDrops(moonRainProgress: number): void {
+  private renderMoonRainDrops(moonRainVisualIntensity: number): void {
     const ctx = this.context;
-    const eventAlpha = Math.min(1, Math.max(0.22, moonRainProgress + 0.18));
+    const visualIntensity = Math.max(0, Math.min(1, moonRainVisualIntensity));
+    // Density, not just opacity, makes Moon Rain begin with a few drops and naturally thin out.
+    const density = Math.pow(visualIntensity, 1.55);
+    const eventAlpha = 0.48 + visualIntensity * 0.52;
 
     ctx.save();
     ctx.lineCap = 'round';
@@ -864,7 +1216,12 @@ export class CanvasRenderer {
     ctx.shadowColor = 'rgba(242, 236, 190, 0.28)';
     ctx.shadowBlur = 8;
 
-    for (const drop of this.moonRainDrops) {
+    for (let index = 0; index < this.moonRainDrops.length; index += 1) {
+      if (seededNoise(index * 37.7 + 11.5) > density) {
+        continue;
+      }
+
+      const drop = this.moonRainDrops[index];
       const alpha = drop.alpha * eventAlpha;
 
       ctx.strokeStyle = `rgba(232, 244, 255, ${alpha})`;
@@ -890,7 +1247,9 @@ export class CanvasRenderer {
 
     return {
       x: this.randomBetween(-24, width + 24),
-      y: initial ? this.randomBetween(-height * 0.15, height) : -length - this.randomBetween(0, 80),
+      y: initial
+        ? this.randomBetween(-height * 0.42, height * 0.12)
+        : -length - this.randomBetween(0, 80),
       length,
       speed,
       alpha: this.randomBetween(0.1, 0.24),
@@ -907,24 +1266,89 @@ export class CanvasRenderer {
     return Math.max(minCount, Math.min(maxCount, areaBasedCount));
   }
 
-  private drawShadowHazard(x: number, y: number, radius: number): void {
-    const ctx = this.context;
+  private drawShadowHazard(
+    x: number,
+    y: number,
+    radius: number,
+    visibility: number,
+    visualState: ShadowVisualState,
+    elapsedTime: number,
+  ): void {
+    const clampedVisibility = Math.max(0, Math.min(1, visibility));
 
-    const shadow = ctx.createRadialGradient(x, y, 0, x, y, radius * 1.08);
+    if (clampedVisibility <= 0.01 && visualState !== 'returning') {
+      return;
+    }
+
+    const ctx = this.context;
+    const isTransitioning = visualState === 'vanishing' || visualState === 'returning';
+    const scale = isTransitioning ? 0.2 + clampedVisibility * 0.8 : 1;
+    const visualRadius = radius * scale;
+    const alpha = visualState === 'returning'
+      ? Math.max(clampedVisibility, 0.12 * (1 - clampedVisibility))
+      : clampedVisibility;
+
+    const shadow = ctx.createRadialGradient(x, y, 0, x, y, visualRadius * 1.08);
     shadow.addColorStop(0, 'rgba(1, 2, 8, 0.9)');
     shadow.addColorStop(0.5, 'rgba(15, 13, 31, 0.68)');
     shadow.addColorStop(0.82, 'rgba(36, 28, 62, 0.28)');
     shadow.addColorStop(1, 'rgba(36, 28, 62, 0)');
 
+    ctx.save();
+    ctx.globalAlpha = alpha;
     ctx.fillStyle = shadow;
     ctx.beginPath();
-    ctx.arc(x, y, radius * 1.08, 0, Math.PI * 2);
+    ctx.arc(x, y, visualRadius * 1.08, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.fillStyle = 'rgba(0, 1, 6, 0.28)';
     ctx.beginPath();
-    ctx.arc(x, y, radius * 0.42, 0, Math.PI * 2);
+    ctx.arc(x, y, Math.max(1.8, visualRadius * 0.42), 0, Math.PI * 2);
     ctx.fill();
+
+    if (isTransitioning) {
+      this.drawShadowTransitionWhorl(x, y, radius, clampedVisibility, visualState, elapsedTime);
+    }
+
+    ctx.restore();
+  }
+
+  private drawShadowTransitionWhorl(
+    x: number,
+    y: number,
+    radius: number,
+    visibility: number,
+    visualState: ShadowVisualState,
+    elapsedTime: number,
+  ): void {
+    const ctx = this.context;
+    const progress = visualState === 'vanishing' ? 1 - visibility : visibility;
+    const whorlAlpha = Math.sin(Math.max(0, Math.min(1, progress)) * Math.PI) * 0.22;
+
+    if (whorlAlpha <= 0.01) {
+      return;
+    }
+
+    const direction = visualState === 'vanishing' ? -1 : 1;
+    const rotation = elapsedTime * direction * 1.8;
+    const arcRadius = radius * (0.18 + visibility * 0.58);
+
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.strokeStyle = `rgba(116, 94, 170, ${whorlAlpha})`;
+    ctx.lineWidth = Math.max(1, radius * 0.035);
+    ctx.lineCap = 'round';
+
+    for (let index = 0; index < 2; index += 1) {
+      const startAngle = rotation + index * Math.PI + progress * direction * 1.4;
+      const endAngle = startAngle + Math.PI * 0.68;
+
+      ctx.beginPath();
+      ctx.arc(x, y, arcRadius * (1 - index * 0.26), startAngle, endAngle);
+      ctx.stroke();
+    }
+
+    ctx.restore();
   }
 
   private drawMoonlightOrb(
@@ -968,16 +1392,16 @@ export class CanvasRenderer {
     const pulsedRadius = radius * pulseScale;
 
     const glow = ctx.createRadialGradient(x, y, 0, x, y, pulsedRadius * 3.6);
-    glow.addColorStop(0, 'rgba(220, 255, 255, 0.84)');
-    glow.addColorStop(0.35, 'rgba(115, 225, 238, 0.34)');
-    glow.addColorStop(1, 'rgba(115, 225, 238, 0)');
+    glow.addColorStop(0, MOON_SHIELD_COLORS.glowCore);
+    glow.addColorStop(0.35, MOON_SHIELD_COLORS.glowMid);
+    glow.addColorStop(1, MOON_SHIELD_COLORS.glowClear);
 
     ctx.fillStyle = glow;
     ctx.beginPath();
     ctx.arc(x, y, pulsedRadius * 3.6, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.strokeStyle = 'rgba(226, 255, 255, 0.92)';
+    ctx.strokeStyle = MOON_SHIELD_COLORS.strokeBright;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(x, y, pulsedRadius * 1.24, 0, Math.PI * 2);
@@ -989,9 +1413,9 @@ export class CanvasRenderer {
       x + pulsedRadius * 0.72,
       y + pulsedRadius,
     );
-    shieldGradient.addColorStop(0, 'rgba(224, 255, 255, 0.9)');
-    shieldGradient.addColorStop(0.48, 'rgba(107, 221, 245, 0.78)');
-    shieldGradient.addColorStop(1, 'rgba(48, 146, 222, 0.82)');
+    shieldGradient.addColorStop(0, MOON_SHIELD_COLORS.fillLight);
+    shieldGradient.addColorStop(0.48, MOON_SHIELD_COLORS.fillMid);
+    shieldGradient.addColorStop(1, MOON_SHIELD_COLORS.fillDeep);
 
     ctx.save();
     this.traceMoonShieldIconPath(x, y, pulsedRadius);
@@ -1471,6 +1895,10 @@ export class CanvasRenderer {
 
     this.drawPlayingHud(snapshot);
 
+    if (snapshot.devScenarioLabel) {
+      this.drawDevScenarioLabel(snapshot.devScenarioLabel);
+    }
+
     if (snapshot.state === 'paused') {
       this.drawPauseOverlay(centerX, centerY);
       return;
@@ -1483,12 +1911,31 @@ export class CanvasRenderer {
       centerX,
       height,
     );
+    this.drawFullMoonBlessingMessage(
+      snapshot.fullMoonBlessingProgress,
+      snapshot.fullMoonBlessingIntensity,
+      centerX,
+      height,
+    );
     this.drawMoonRainMessage(
       snapshot.moonRainMessage,
       snapshot.moonRainMessageProgress,
       centerX,
       height,
     );
+  }
+
+  private drawDevScenarioLabel(label: string): void {
+    const { width } = this.size;
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'top';
+    ctx.font = `700 ${width < 420 ? 10 : 11}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(220, 246, 255, 0.42)';
+    ctx.fillText(label, width - 12, 12);
+    ctx.restore();
   }
 
   private drawPauseOverlay(centerX: number, centerY: number): void {
@@ -1640,7 +2087,16 @@ export class CanvasRenderer {
     this.drawHudMetric('Score', snapshot.score.toString(), contentLeft, firstRowY, contentWidth);
     this.drawHudMetric('Time', `${snapshot.elapsedTime.toFixed(1)}s`, contentLeft, firstRowY + rowGap, contentWidth);
     this.drawHudMetric('Night', snapshot.nightLevel.toString(), contentLeft, firstRowY + rowGap * 2, contentWidth);
-    this.drawGlowMeter(snapshot.glow, snapshot.maxGlow, contentLeft, firstRowY + rowGap * 3 + 2, contentWidth);
+    this.drawGlowMeter(
+      snapshot.glow,
+      snapshot.maxGlow,
+      snapshot.fullMoonBlessingIntensity,
+      snapshot.moonShieldRemaining,
+      snapshot.moonShieldDuration,
+      contentLeft,
+      firstRowY + rowGap * 3 + 2,
+      contentWidth,
+    );
 
     for (let index = 0; index < statusRows.length; index += 1) {
       const row = statusRows[index];
@@ -1714,6 +2170,43 @@ export class CanvasRenderer {
     ctx.fillStyle = `rgba(248, 240, 201, ${0.68 * alpha})`;
     this.setFittedFont('500', 15, 12, moonPhaseName);
     ctx.fillText(moonPhaseName, x, height * 0.24 + 24 - rise);
+    ctx.restore();
+  }
+
+  private drawFullMoonBlessingMessage(
+    progress: number,
+    intensity: number,
+    x: number,
+    height: number,
+  ): void {
+    const fadeIn = Math.max(0, Math.min(1, progress / 0.2));
+    const fadeOut = Math.max(0, Math.min(1, (1 - progress) / 0.28));
+    const textAlpha = intensity * Math.min(fadeIn, fadeOut);
+
+    if (textAlpha <= 0) {
+      return;
+    }
+
+    const ctx = this.context;
+    const reveal = this.staggeredReveal(progress, 0.02, 0.26);
+    const scale = 0.985 + Math.sin(progress * Math.PI) * 0.025;
+    const y = height * (this.size.width < 520 ? 0.36 : 0.34);
+    const driftY = (1 - reveal) * 10 - progress * 5;
+
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.translate(x, y + driftY);
+    ctx.scale(scale, scale);
+    ctx.shadowColor = `rgba(238, 246, 255, ${0.7 * textAlpha})`;
+    ctx.shadowBlur = 16;
+    ctx.fillStyle = `rgba(255, 252, 230, ${0.96 * textAlpha})`;
+    this.setFittedFont('700', 27, 19, 'Full Moon', this.size.width - 70);
+    ctx.fillText('Full Moon', 0, 0);
+
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = `rgba(255, 236, 174, ${0.18 * textAlpha})`;
+    ctx.fillText('Full Moon', 0, 1.2);
     ctx.restore();
   }
 
@@ -1841,7 +2334,16 @@ export class CanvasRenderer {
     ctx.closePath();
   }
 
-  private drawGlowMeter(glow: number, maxGlow: number, x: number, y: number, width: number): void {
+  private drawGlowMeter(
+    glow: number,
+    maxGlow: number,
+    fullMoonBlessingIntensity: number,
+    moonShieldRemaining: number,
+    moonShieldDuration: number,
+    x: number,
+    y: number,
+    width: number,
+  ): void {
     const ctx = this.context;
     const isNarrow = this.size.width < 420;
     const height = isNarrow ? 10 : 12;
@@ -1856,6 +2358,19 @@ export class CanvasRenderer {
     const fillGradient = ctx.createLinearGradient(barLeft, 0, barLeft + barWidth, 0);
     fillGradient.addColorStop(0, isLowGlow ? '#df836a' : '#ffe49a');
     fillGradient.addColorStop(1, isLowGlow ? '#f2b46f' : '#f4c95d');
+    const moonBlessingAlpha = Math.max(0, Math.min(1, fullMoonBlessingIntensity));
+    const moonFillGradient = ctx.createLinearGradient(barLeft, 0, barLeft + barWidth, 0);
+    moonFillGradient.addColorStop(0, '#f8fdff');
+    moonFillGradient.addColorStop(0.52, '#dfefff');
+    moonFillGradient.addColorStop(1, '#fff8d6');
+    const shieldAlpha =
+      moonBlessingAlpha > 0
+        ? 0
+        : this.getMoonShieldGlowMeterIntensity(moonShieldRemaining, moonShieldDuration);
+    const shieldFillGradient = ctx.createLinearGradient(barLeft, 0, barLeft + barWidth, 0);
+    shieldFillGradient.addColorStop(0, MOON_SHIELD_COLORS.fillLight);
+    shieldFillGradient.addColorStop(0.5, MOON_SHIELD_COLORS.fillMid);
+    shieldFillGradient.addColorStop(1, MOON_SHIELD_COLORS.fillDeep);
 
     ctx.save();
     ctx.textAlign = 'left';
@@ -1876,13 +2391,54 @@ export class CanvasRenderer {
       this.traceRoundedRect(barLeft, barTop, fillWidth, height, Math.min(radius, fillWidth / 2));
       ctx.fill();
       ctx.restore();
+
+      if (moonBlessingAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = moonBlessingAlpha;
+        ctx.shadowColor = `rgba(220, 242, 255, ${0.34 + moonBlessingAlpha * 0.2})`;
+        ctx.shadowBlur = 9 + moonBlessingAlpha * 7;
+        ctx.fillStyle = moonFillGradient;
+        this.traceRoundedRect(barLeft, barTop, fillWidth, height, Math.min(radius, fillWidth / 2));
+        ctx.fill();
+        ctx.restore();
+      }
+
+      if (shieldAlpha > 0) {
+        ctx.save();
+        ctx.globalAlpha = shieldAlpha;
+        ctx.shadowColor = `rgba(115, 225, 238, ${0.28 + shieldAlpha * 0.22})`;
+        ctx.shadowBlur = 8 + shieldAlpha * 6;
+        ctx.fillStyle = shieldFillGradient;
+        this.traceRoundedRect(barLeft, barTop, fillWidth, height, Math.min(radius, fillWidth / 2));
+        ctx.fill();
+        ctx.restore();
+      }
     }
 
-    ctx.strokeStyle = fillRatio > 0.92 ? 'rgba(255, 238, 166, 0.58)' : 'rgba(249, 237, 197, 0.34)';
+    ctx.strokeStyle = moonBlessingAlpha > 0
+      ? `rgba(230, 245, 255, ${0.34 + moonBlessingAlpha * 0.28})`
+      : shieldAlpha > 0
+        ? `rgba(220, 255, 255, ${0.32 + shieldAlpha * 0.28})`
+      : fillRatio > 0.92
+        ? 'rgba(255, 238, 166, 0.58)'
+        : 'rgba(249, 237, 197, 0.34)';
     ctx.lineWidth = 1;
     this.traceRoundedRect(barLeft, barTop, barWidth, height, radius);
     ctx.stroke();
     ctx.restore();
+  }
+
+  private getMoonShieldGlowMeterIntensity(remaining: number, duration: number): number {
+    if (remaining <= 0 || duration <= 0) {
+      return 0;
+    }
+
+    const transitionSeconds = 0.38;
+    const elapsed = duration - remaining;
+    const fadeIn = Math.max(0, Math.min(1, elapsed / transitionSeconds));
+    const fadeOut = Math.max(0, Math.min(1, remaining / transitionSeconds));
+
+    return Math.min(fadeIn, fadeOut);
   }
 
   private drawTitle(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {

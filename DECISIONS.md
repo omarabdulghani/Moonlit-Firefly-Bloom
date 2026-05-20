@@ -195,6 +195,69 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: Moon Rain should feel like a visible special event without obscuring the firefly, orbs, shadows, powerups, or HUD, and without changing any gameplay values.
 - Alternatives considered: Heavy particle systems, realistic water rain, foreground rain over gameplay, adding lightning/storm effects, leaving Moon Rain as a sound/gameplay-only event.
 
+### Moon Rain Visual Fade Polish
+
+- Date: `2026-05-17`
+- Decision: Fade the Moon Rain falling-light effect in when the event begins and fade it out visually after the gameplay event ends.
+- Reason: Moon Rain should feel softer and more atmospheric without changing its trigger timing, duration, extra orb behavior, shadow speed pressure, sounds, scoring, or stats.
+- Alternatives considered: Keeping instant visual on/off, extending Moon Rain gameplay during fade-out, adding new weather effects, adding extra particles, changing event sounds.
+
+### Full Moon Blessing and Delayed Moon Rain
+
+- Date: `2026-05-19`
+- Decision: Later Full Moons now trigger a short Full Moon Blessing that fills and protects glow, then schedule Moon Rain after two later moon phase changes. Moon Rain is independent once started, lasts slightly longer, and builds/thins by drop density instead of only opacity.
+- Reason: Full Moon should feel like a magical reward moment, while Moon Rain should feel like a delayed after-event rather than something that starts directly during Full Moon. The rain visual should begin with a few drops, build naturally, and wind down without extending Moon Rain gameplay effects.
+- Alternatives considered: Starting Moon Rain immediately on Full Moon, making the blessing a permanent upgrade, adding new powerups or enemies, adding lantern bugs or constellations now, extending gameplay effects during visual fade-out, changing Moon Rain sounds.
+
+### Phase-Bound Full Moon Blessing
+
+- Date: `2026-05-19`
+- Decision: Full Moon Blessing now lasts for the entire later Full Moon phase, fills and protects glow throughout that phase, keeps the glow meter moon-white, and shows special stars plus subtle decorative lantern-bug glows while active. Moon Rain remains a delayed independent after-event, with its visual start/end driven by drop density rather than opacity alone.
+- Reason: A short fixed blessing timer made Full Moon rewards easy to miss and made the glow meter protection unclear. Tying the blessing to the actual Full Moon phase makes the event readable and magical without adding new mechanics or permanent progression.
+- Alternatives considered: Keeping the 6-8 second blessing timer, leaving Moon Rain as the primary Full Moon reward, adding collectible event bugs, adding constellations as gameplay, changing Moon Rain sounds, adding new assets.
+
+### Full Moon Ambient Fireflies and Shield Glow Lock
+
+- Date: `2026-05-19`
+- Decision: Add small decorative warm fireflies during later Full Moon Blessing, slow the lantern-bug/constellation motion, and make Moon Shield lock glow at max only after shielded glow reaches full or starts full.
+- Reason: Full Moon Blessing needed a clearer cozy magical layer, while the constellation motion felt too active. Moon Shield should keep collection, scoring, Bloom Burst, Night progression, and powerup behavior normal while making max glow feel protected once achieved.
+- Alternatives considered: Making Full Moon fireflies collectible, adding new event rewards, speeding up constellation motion for visibility, freezing all collection during shield, changing shield duration, adding new assets.
+
+### Full Moon Balcony Blessing Art Direction
+
+- Date: `2026-05-20`
+- Decision: Reframe Full Moon visuals as `Moon Blessing on the Balcony`: ambient fireflies gather near the plants and railing, constellation lines are removed, remaining sky details are faint, and moonwash plus staggered stars support a softer staged awakening/settling.
+- Reason: The previous Full Moon treatment put too many decorative elements into the open sky, making the event feel like a busy overlay instead of the rooftop garden becoming alive with moonlight.
+- Alternatives considered: Keeping sky-centered fireflies, adding more constellation geometry, importing new event art, using a brighter overlay, changing Full Moon or Moon Rain gameplay timing.
+
+### Full Moon Cleanup Correction
+
+- Date: `2026-05-20`
+- Decision: Remove the lower rectangular Full Moon overlay, simplify the `Full Moon` title into elegant text-only glow, and rework the ambient fireflies into small animated plant-side environmental glows.
+- Reason: The previous Full Moon pass created visible art-direction problems: a boxy lower moonwash, generic title styling, and fireflies that did not feel magical or grounded in the balcony scene. The correction keeps the event subtle, cozy, and readable without changing gameplay.
+- Alternatives considered: Keeping the rectangular moonwash at lower opacity, adding a title panel, adding more sky effects, importing new art assets, changing Full Moon or Moon Rain gameplay timing.
+
+### Full Moon Firefly Motion Refinement
+
+- Date: `2026-05-20`
+- Decision: Move Full Moon decorative fireflies tighter into the side plant and foreground balcony zones, increase their warm glow, and animate them with smooth anchored oval/figure-eight hovering motion.
+- Reason: The previous decorative fireflies still felt too faint, sky-like, and mechanically jittery. Anchored organic loops make them read more like real magical fireflies while keeping the center playfield clear.
+- Alternatives considered: Adding more fireflies, using random frame-to-frame motion, leaving the old upward drift, adding imported firefly art, adding gameplay interactions, or making the plant glow brighter.
+
+### Full Moon Shadow Vanish
+
+- Date: `2026-05-20`
+- Decision: During later Full Moon Blessing, shadows now transition into a hidden, harmless state, remain invisible for the blessing, then reform with a soft return animation after Full Moon ends.
+- Reason: Full Moon is meant to feel like a magical protected state. Removing shadow clutter and threat during the event makes the scene cleaner, safer, and more rewarding while preserving the same shadow entities for normal play afterward.
+- Alternatives considered: Instantly hiding shadows, permanently despawning and respawning shadows, leaving shadows visible but harmless, adding particle-heavy removal effects, or changing Full Moon/Moon Rain timing.
+
+### Larger Side Plants
+
+- Date: `2026-05-20`
+- Decision: Increase the side plant assets by 50% across the whole game and shift the Full Moon ambient firefly anchors to preserve their relative relationship to the larger plant zones.
+- Reason: Larger plants make the rooftop garden feel more present and cozy, while the Full Moon fireflies should still read as plant-side environmental life instead of drifting away from the enlarged foliage.
+- Alternatives considered: Scaling only during Full Moon, leaving firefly anchors unchanged, adding new plant assets, or changing gameplay object placement.
+
 ### Essential Sound Effects
 
 - Date: `2026-05-13`
@@ -236,6 +299,13 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Decision: Hide the cursor during active mouse play, reveal it briefly on mouse movement/click, and stop the low-glow warning sound as soon as glow recovers.
 - Reason: Mouse play should feel more immersive without trapping the player, and warning audio should match the current danger state instead of continuing after the player fixes the problem.
 - Alternatives considered: Always hiding the cursor, always showing the cursor, leaving the heartbeat sound as a fire-and-forget cue, adding a settings menu.
+
+### Shield-Linked Glow Meter Color
+
+- Date: `2026-05-19`
+- Decision: Use the Moon Shield's cyan/blue color identity on the glow meter while Moon Shield is active, with Full Moon Blessing moon-white styling taking priority.
+- Reason: The player should be able to see that their glow is protected by the shield without adding another meter, new UI text, or changing shield mechanics.
+- Alternatives considered: Keeping the glow meter gold while shielded, adding a new shield meter, adding a larger HUD message, changing Moon Shield duration or protection rules.
 
 ### Moon Shield Also Stops Passive Glow Drain
 
@@ -361,6 +431,14 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Reason: After switching to manual M4A/MP3 files, the start sound could work through its gesture-safe fallback while normal gameplay sounds were dropped if the AudioContext was still suspended or loading. The approved orb cue is also longer than the previous generated cue, so the old cooldown and two-instance cap made normal sequential pickups feel silent.
 - Alternatives considered: Using HTMLAudio for every sound, returning to WAV fallback, increasing all sound overlap globally, changing gameplay pickup timing, or editing the approved audio files.
 - Note: Debug logs behind `?audioDebug=1` now make source selection, fallback, context state, play results, and skip reasons easier to inspect on iPhone.
+
+### Developer Event Test Shortcuts
+
+- Date: `2026-05-20`
+- Decision: Add hidden URL-based developer scenarios for Full Moon Blessing, Moon Rain, and the delayed Full Moon-to-Moon Rain sequence.
+- Reason: Full Moon and Moon Rain testing otherwise requires playing until later Nights, slowing art-direction and event polish. Query-only scenarios keep testing fast without adding player-facing menus, settings, cheats, or gameplay changes.
+- Alternatives considered: Adding an in-game debug menu, adding keyboard cheat codes, shortening normal Moon phase progression, manually editing localStorage, or leaving event testing tied to normal long-run progression.
+- Note: Developer scenario runs do not update the local best score, and normal gameplay is unchanged without a dev query parameter.
 
 ### Browser-First
 

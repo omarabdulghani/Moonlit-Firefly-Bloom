@@ -30,17 +30,20 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Bloom Burst reward at high/full glow.
 - Night Level escalation.
 - Moon phase cycle.
-- Moon Rain event with visible falling moonlight.
+- Full Moon Blessing on later Full Moons with glow protection, moon-white meter styling, plant-side decorative fireflies, and temporary shadow disappearance.
+- Delayed Moon Rain event with visible falling moonlight that builds and thins by drop density.
 - Moon Shield, Moon Dash, and Glow Surge/x2 powerups.
 - Basic sound effects using manually approved M4A runtime files with MP3 fallback.
 - Pause/resume through `Esc`, tab switching, browser blur, and page visibility changes.
-- Atmospheric rooftop background with skyline, railing, plants, birds, stars, and shooting stars.
+- Atmospheric rooftop background with skyline, railing, enlarged side plants, birds, stars, and shooting stars.
+- Hidden URL-based developer test scenarios for Full Moon and Moon Rain QA.
 
 ## Current Scope Notes
 
 - Persistent flower/bloom trail scoring was removed for MVP clarity.
 - Powerups are temporary run-only pickups, not upgrades.
 - The game currently stores only local best score.
+- Developer scenario runs do not update local best score.
 - WAV audio files are source/master assets only; normal runtime playback uses approved M4A/MP3 files.
 - The prototype is still primarily a core-fun test, not a full release.
 
@@ -102,3 +105,4 @@ Use these questions during early playtests:
 - Is the score motivating without adding complexity?
 - Does the game still feel cozy when the player is under pressure?
 - Do birds, stars, Moon Rain, and other atmosphere help without distracting?
+- Does Full Moon Blessing feel rewarding, clean, and readable when shadows vanish?

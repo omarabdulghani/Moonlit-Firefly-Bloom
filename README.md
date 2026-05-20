@@ -18,12 +18,14 @@ Implemented:
 - Shadow hazards that drain glow and trigger stronger danger feedback.
 - Passive glow drain, low-glow warning audio, and local best score.
 - Bloom Burst reward moments at high/full glow.
-- Night Level escalation, moon phase cycle, and Moon Rain event.
+- Night Level escalation and a visual moon phase cycle.
+- Later Full Moon Blessing events with moon-white glow protection, plant-side magical fireflies, shadow disappearance, and delayed Moon Rain.
 - Moon Shield, Moon Dash, and Glow Surge/x2 powerups.
 - Powerup sounds, shadow damage sound, Moon Rain ambience, and other core sound effects.
 - Manually approved runtime audio using M4A primary and MP3 fallback files.
-- Rooftop background assets, animated night birds, additional stars, and occasional shooting stars.
+- Rooftop background assets with enlarged side plants, animated night birds, additional stars, and occasional shooting stars.
 - Pause/resume flow through `Esc`, browser blur, tab switching, and page visibility changes.
+- Hidden URL-based developer test scenarios for Full Moon and Moon Rain event QA.
 
 Still not implemented:
 
@@ -72,13 +74,14 @@ The local prototype now answers most of the technical MVP questions. The next ma
 
 ## Where We Stand
 
-The project is currently ready for focused private playtesting. The latest work stabilized mobile audio playback, switched runtime audio to Omar-approved M4A/MP3 files, refined mobile controls with a virtual joystick, and kept the rooftop scene atmospheric without adding long-term systems.
+The project is currently ready for focused private playtesting. The latest work stabilized mobile audio playback, switched runtime audio to Omar-approved M4A/MP3 files, refined mobile controls with a virtual joystick, and polished the Full Moon/Moon Rain event flow without adding long-term progression systems.
 
 Recommended next work:
 
 - Private playtest the current loop.
 - Tune powerup frequency and difficulty only after observing play.
-- QA pause/resume, browser tab switching, mobile joystick feel, and audio behavior on real phones.
+- QA Full Moon Blessing, delayed Moon Rain, pause/resume, browser tab switching, mobile joystick feel, and audio behavior on real phones.
+- Use `docs/DEV_TESTING.md` query parameters for fast event testing.
 - Consider a simple settings/mute option later, but do not add it until the core feel is stable.
 
 ## Development Philosophy
