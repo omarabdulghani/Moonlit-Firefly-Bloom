@@ -8,14 +8,14 @@ Small, checkable tasks for building the Moonlit Firefly Bloom MVP.
 
 - [x] Local browser prototype is playable.
 - [x] Desktop keyboard, desktop mouse, mobile touch controls, and phone/narrow virtual joystick exist.
-- [x] Core loop includes moonlight collection, shadow avoidance, glow management, powerups, Bloom Burst, Night progression, Moon Rain, sound, pause/resume, and local best score.
+- [x] Core loop includes moonlight collection, shadow avoidance, glow management, powerups, Bloom Burst, Night progression, Moon Rain, sound, pause/resume, and local records.
 - [x] Current focus is core fun, readability, real-device QA, and private playtesting.
 - [ ] Backend, accounts, online leaderboard, shops, ads, payments, achievements, permanent upgrades, PWA setup, and app packaging remain intentionally unbuilt.
 
 ## Next Recommended Work
 
 - [ ] Private playtest the current build with a small tester group.
-- [ ] Watch whether players understand glow, shadows, Bloom Burst, and powerups without explanation.
+- [ ] Watch whether players understand glow, shadows, Bloom Burst, powerups, and Night-as-progress without explanation.
 - [ ] Tune powerup frequency, shadow pressure, and glow pacing only after playtest observations.
 - [ ] QA pause/resume, tab switching, cursor behavior, mobile joystick feel, and runtime audio on real devices.
 - [ ] Consider a tiny mute/settings option later if sound feedback is stable and testers ask for it.
@@ -136,6 +136,8 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Add retry button or tap-to-retry behavior.
 - [x] Reset all run state on retry.
 
+Phase 16 and 16.1 superseded the player-facing Phase 6 summary. Raw score and best score remain internal/legacy, while the current game-over card emphasizes Night reached, Moonlight gathered, Time glowing, earned Full Moon milestones, Best Night, and a poetic run title.
+
 ## Phase 7: Juice and Polish
 
 - [x] Remove debug-feeling state text from the playing HUD.
@@ -250,7 +252,8 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [ ] Are shadows readable and fair?
 - [ ] Does glow loss feel clear?
 - [ ] Does the player want to retry?
-- [ ] Does best score persist after refresh?
+- [ ] Do local records persist after refresh?
+- [ ] Does Best Night persist after refresh?
 - [ ] Is the MVP still small?
 
 ## Phase 9.1: HUD and Game Over UI Polish
@@ -264,6 +267,8 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Group game over stats more cleanly.
 - [x] Update retry copy to `Click / Tap to fly again`.
 - [x] Preserve gameplay, tuning, assets, input, and restart behavior.
+
+Phase 9.1 HUD labels were simplified later by Phase 16. Live Score and live Time are no longer shown during active play.
 
 ## Phase 10: Moon Phase Cycle
 
@@ -295,8 +300,8 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Return orb count to normal when Moon Rain fades.
 - [x] Slightly increase shadow speed during Moon Rain.
 - [x] Show short Moon Rain start and end messages.
-- [x] Track Full Moons survived during the current run.
-- [x] Show Full Moons survived on the game over summary.
+- [x] Track completed Full Moon/Moon Rain milestones during the current run.
+- [x] Show earned Full Moon milestones on the game over summary.
 - [x] Preserve normal scoring, Bloom Burst, Moon Shield, Night Level, input, and restart behavior.
 - [x] Avoid ads, upgrades, monetization, new enemy types, new powerups, sound, menus, and particle systems.
 
@@ -609,10 +614,58 @@ Phase 4 was corrected by Phase 4.5. Persistent flower-style bloom marks are no l
 - [x] Support `?devMoonRain=1` to start a run with Moon Rain active immediately.
 - [x] Support `?devFullMoonSequence=1` to quickly test Full Moon Blessing into delayed Moon Rain.
 - [x] Keep normal gameplay unchanged when no dev query parameter is present.
-- [x] Skip local best score saving during developer scenario runs.
+- [x] Skip local record saving during developer scenario runs.
 - [x] Add a tiny dev-only scenario label while a dev scenario is active.
 - [x] Document the developer shortcuts in `docs/DEV_TESTING.md`.
 - [x] Avoid player-facing menus, settings, cheats, monetization, leaderboard, PWA, Capacitor, new systems, new audio, and new assets.
+
+## Phase 16: HUD and Run Reward System Redesign
+
+- [x] Inspect score, time, Night, glow, game-over, local storage, and HUD rendering logic before changing code.
+- [x] Remove live Score from the active gameplay HUD.
+- [x] Remove live Time from the active gameplay HUD while keeping run duration tracked internally.
+- [x] Keep the live HUD focused on Night and the Glow meter, with existing temporary powerup/status lines.
+- [x] Track `moonlightGathered` as a small player-facing run stat from normal moonlight orb collection.
+- [x] Keep raw score logic internal/legacy instead of making it the player-facing reward.
+- [x] Emphasize Night reached in the game-over summary.
+- [x] Add one-time poetic run title selection based on the deepest Night reached.
+- [x] Add local Best Night tracking.
+- [x] Skip Best Night and best score updates during developer scenario runs.
+- [x] Show Time only as an end-of-run `Time glowing` stat.
+- [x] Update game-over copy to feel warmer and more personal.
+- [x] Preserve gameplay tuning, movement, spawns, glow values, powerups, Full Moon, Moon Rain, audio, and background behavior.
+- [x] Update design and decision docs for the new reward hierarchy.
+
+## Phase 16.1: Game-Over Reward Summary Polish
+
+- [x] Hide zero-value milestone stats from the game-over summary.
+- [x] Rename player-facing `Full Moons survived` wording to `Full Moons witnessed`.
+- [x] Keep `New Deepest Night` as the cozy new-record message near the Night result.
+- [x] Rebalance the game-over hierarchy toward Glow Faded, New Deepest Night, Night reached, poetic title, then quieter run stats.
+- [x] Keep the live HUD unchanged with only Night and Glow.
+- [x] Preserve gameplay, records, movement, powerups, Full Moon, Moon Rain, audio, controls, and background behavior.
+
+## Phase 16.2: Game-Over Card Layout and Spacing Polish
+
+- [x] Split `The moon called you` into a quiet support label plus a separate emphasized poetic title line.
+- [x] Refine the game-over hierarchy around Glow Faded, New Deepest Night, Night reached, title reward, quieter stats, and CTA.
+- [x] Improve vertical rhythm, padding, section gaps, and responsive card height.
+- [x] Keep stats in a centered single-column block with dimmer labels and brighter values.
+- [x] Improve CTA placement and warm closing feel.
+- [x] Keep zero-value milestone stats hidden.
+- [x] Keep the live HUD unchanged with only Night and Glow.
+- [x] Preserve gameplay, record logic, controls, audio, background visuals, Full Moon, and Moon Rain behavior.
+
+## Phase 16.2.1: Game-Over Card Spacing Correction
+
+- [x] Rebuild game-over card placement around clear header, title, stats, and CTA sections.
+- [x] Use named spacing values for card padding, section gaps, stat rows, and CTA distance.
+- [x] Center the whole content group vertically inside the card to avoid cramped text and dead space.
+- [x] Hide `Moonlight gathered` when the value is 0.
+- [x] Keep zero-value event milestones hidden.
+- [x] Preserve the split poetic title treatment from Phase 16.2.
+- [x] Keep the live HUD unchanged with only Night and Glow.
+- [x] Preserve gameplay, scoring logic, records, controls, audio, assets, Full Moon, and Moon Rain behavior.
 
 ## Project Hygiene
 

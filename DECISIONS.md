@@ -89,6 +89,7 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Decision: Add a simple game over summary with final score, local best score, time survived, and moonlight orbs collected.
 - Reason: The end of a run should clearly explain what happened and encourage an immediate retry without adding accounts, online leaderboards, upgrades, or extra menus.
 - Alternatives considered: No best score, online leaderboard, detailed stats screen, achievements, progression rewards.
+- Current note: Phase 16 and 16.1 superseded this as the player-facing reward presentation. Raw score/local best score remain internal/legacy, while the visible game-over summary now emphasizes Night reached, a poetic run title, Moonlight gathered, Time glowing, earned Full Moon milestones, and Best Night.
 
 ### Tiny Presentation Polish
 
@@ -438,7 +439,39 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Decision: Add hidden URL-based developer scenarios for Full Moon Blessing, Moon Rain, and the delayed Full Moon-to-Moon Rain sequence.
 - Reason: Full Moon and Moon Rain testing otherwise requires playing until later Nights, slowing art-direction and event polish. Query-only scenarios keep testing fast without adding player-facing menus, settings, cheats, or gameplay changes.
 - Alternatives considered: Adding an in-game debug menu, adding keyboard cheat codes, shortening normal Moon phase progression, manually editing localStorage, or leaving event testing tied to normal long-run progression.
-- Note: Developer scenario runs do not update the local best score, and normal gameplay is unchanged without a dev query parameter.
+- Note: Developer scenario runs do not update local records such as best score or Best Night, and normal gameplay is unchanged without a dev query parameter.
+
+### HUD and Run Reward Redesign
+
+- Date: `2026-06-02`
+- Decision: Remove raw Score and live Time from the active gameplay HUD, keep Night and Glow as the main live readouts, and shift game-over rewards toward Night reached, Moonlight gathered, Time glowing, earned Full Moon milestones, Best Night, and a poetic run title.
+- Reason: Large score numbers and stopwatch-style time did not fit the cozy wind-down identity. Night reached and a warm title better answer how deep the firefly's light survived.
+- Alternatives considered: Keeping score/time as the primary HUD, adding a new currency, adding achievements, adding a larger stats screen, or removing internal score entirely.
+- Note: Raw score remains internal/legacy for existing scoring behavior, while `moonlightGathered` is the small player-facing collection stat. Best Night is saved locally, and developer scenario runs do not update local records.
+
+### Game-Over Reward Summary Polish
+
+- Date: `2026-06-03`
+- Decision: Hide zero-value milestone stats from the game-over card, rename the Full Moon stat to `Full Moons witnessed`, and show new Best Night runs with `New Deepest Night` before the Night reached line.
+- Reason: Short-run game over should feel encouraging and personal, not like a spreadsheet listing missed milestones. Night reached and the poetic title should remain the emotional center of the summary.
+- Alternatives considered: Keeping all stats visible even at zero, keeping `Full Moons survived`, adding a larger stats screen, adding achievements, or returning score/time to the live HUD.
+- Note: The live HUD remains Night and Glow only, and gameplay/record rules are unchanged.
+
+### Game-Over Card Layout Rhythm
+
+- Date: `2026-06-03`
+- Decision: Refine the game-over card hierarchy and spacing so the poetic title has its own emphasized reward line, stats sit in a quiet centered block, and the retry CTA has more breathing room.
+- Reason: The previous version had the right reward content but still read too much like a stat table. A clearer vertical rhythm makes the ending feel warmer, more intentional, and more premium without changing gameplay or records.
+- Alternatives considered: Keeping the compact stat block, adding a larger results screen, adding icons or new art, adding animations, or reintroducing score/time to the live HUD.
+- Note: This is presentation-only; zero-value milestone hiding, Best Night behavior, live HUD content, and gameplay remain unchanged.
+
+### Game-Over Section-Based Spacing
+
+- Date: `2026-06-03`
+- Decision: Rework the game-over card into header, title, stats, and CTA sections with named spacing values and a vertically centered content group.
+- Reason: The prior layout still had cramped top text and awkward empty space near the bottom. Section-based rhythm keeps the title, stats, and retry invitation connected without adding more UI.
+- Alternatives considered: Adding extra filler copy, keeping the CTA pinned to the card bottom, returning to a two-column stat table, or changing gameplay reward logic.
+- Note: `Moonlight gathered` now hides when it is zero; live HUD, records, gameplay, audio, and event behavior are unchanged.
 
 ### Browser-First
 
@@ -460,6 +493,7 @@ Use this file for important project decisions. Add a new entry when a choice aff
 - Decision: Store only local best score with `localStorage`.
 - Reason: The MVP does not need accounts, servers, or online persistence. Local best score supports replayability without adding infrastructure.
 - Alternatives considered: Backend database, browser IndexedDB, cloud saves, online leaderboard.
+- Historical note: Phase 16 added player-facing Best Night as a second simple local record while keeping raw best score internal/legacy.
 
 ### No Multiplayer in MVP
 
@@ -485,6 +519,6 @@ Use this file for important project decisions. Add a new entry when a choice aff
 ### Cozy Arcade Direction
 
 - Date: `YYYY-MM-DD`
-- Decision: Aim for cozy arcade play: simple rules, gentle atmosphere, fast retries, and score chasing.
-- Reason: This direction supports replayability while keeping the project small and approachable.
+- Decision: Aim for cozy arcade play: simple rules, gentle atmosphere, fast retries, and deeper-Night runs.
+- Reason: This direction supports replayability while keeping the project small and approachable. Phase 16 shifted visible motivation away from raw score chasing toward Night reached, Best Night, and warm run titles.
 - Alternatives considered: Narrative adventure, idle progression game, puzzle game, roguelite upgrade game.

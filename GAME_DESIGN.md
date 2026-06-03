@@ -38,7 +38,7 @@ Moonlit Firefly Bloom is a soothing, cozy, calming arcade game for winding down.
 4. Use moonlight and powerups to recover, move faster, or trigger Bloom Burst.
 5. Survive deeper Night Levels, later Full Moon Blessings, and delayed Moon Rain moments.
 6. Lose when glow reaches zero.
-7. See final score, best score, orbs collected, Bloom Bursts, deepest Night, and Full Moons survived.
+7. See the deepest Night reached, a poetic run title, Moonlight gathered, Time glowing, Best Night, and earned milestone stats such as Full Moons witnessed.
 8. Retry immediately.
 
 ## Player Actions
@@ -54,16 +54,18 @@ Moonlit Firefly Bloom is a soothing, cozy, calming arcade game for winding down.
 
 The MVP should not require shooting, menus, inventory, upgrades, or complex decisions.
 
-## Scoring
+## Run Rewards
 
-MVP scoring should be simple and readable:
+The player-facing reward system should feel cozy, personal, and easy to understand:
 
-- Moonlight collected adds points.
-- Bloom Burst adds a small bonus score when triggered at high/full glow.
-- Powerups do not add separate score except through their normal effects.
-- There is no combo multiplier, survival-time scoring, or permanent progression scoring.
+- Main reward: deepest Night reached.
+- Emotional reward: a poetic title earned at game over.
+- Secondary stat: Moonlight gathered, counted from normal moonlight orb pickups.
+- Optional stat: Time glowing, shown only at game over.
+- Earned milestone stats: show cozy event milestones such as Full Moons witnessed only when the run actually reached them.
+- Local record: Best Night.
 
-The score should reward active, graceful movement rather than waiting.
+Raw score still exists internally as legacy/simple scoring behavior, but it should not be the main player-facing reward. Live gameplay should not feel like chasing a large arcade number or watching a stopwatch.
 
 ## Lose Condition
 
@@ -104,12 +106,13 @@ This moving reward powerup is only a future idea. It should not be implemented u
 Replayability comes from:
 
 - Better movement mastery.
-- Higher scores.
+- Deeper Night reached.
+- Cozy run titles that make the end of a run feel personal.
 - Cleaner shadow avoidance.
 - Fast restarts.
 - Better powerup decisions.
 - Reaching deeper Nights and surviving Full Moon events.
-- A saved local best score.
+- A saved local Best Night.
 
 Progression systems are intentionally out of scope for the MVP.
 

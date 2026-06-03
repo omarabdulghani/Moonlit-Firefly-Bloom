@@ -32,6 +32,29 @@ type GameOptions = {
 
 export class Game {
   private static readonly bestScoreStorageKey = 'moonlitFireflyBloom.bestScore';
+  private static readonly bestNightStorageKey = 'moonlitFireflyBloom.bestNight';
+  private static readonly runTitleTiers: readonly { minNight: number; titles: readonly string[] }[] = [
+    {
+      minNight: 21,
+      titles: ['Eternal Lantern', 'Dreamlight Guardian', 'Last Little Light', 'Child of the Moon', 'Nightfall Spirit'],
+    },
+    {
+      minNight: 13,
+      titles: ['Deep Night Drifter', 'Starbound Firefly', 'Moon-Blessed', 'Shadow Dancer', 'Keeper of the Glow'],
+    },
+    {
+      minNight: 8,
+      titles: ['Silver Wing', 'Full Moon Friend', 'Moonlit Guardian', 'Glow Walker', 'Night Bloom'],
+    },
+    {
+      minNight: 4,
+      titles: ['Glow Keeper', 'Soft Wanderer', 'Moonlight Seeker', 'Quiet Drifter', 'Lantern Heart'],
+    },
+    {
+      minNight: 1,
+      titles: ['Little Spark', 'Tiny Lantern', 'First Glow', 'Moonlit Seed', 'New Firefly'],
+    },
+  ];
   private static readonly moonPhases: readonly MoonPhaseName[] = [
     'Full Moon',
     'Waning Gibbous',
@@ -49,11 +72,14 @@ export class Game {
   private lastFrameTime = 0;
   private score = 0;
   private bestScore = this.loadBestScore();
-  private orbsCollected = 0;
+  private bestNightLevel = this.loadBestNightLevel();
+  private moonlightGathered = 0;
   private bloomBursts = 0;
   private fullMoonTrialsSurvived = 0;
   private nightLevel = 1;
   private highestNightLevel = 1;
+  private isNewBestNight = false;
+  private runTitle = '';
   private glow = 100;
   private collectPulseTimer = 0;
   private bloomBurstTimer = 0;
@@ -298,11 +324,14 @@ export class Game {
       elapsedTime: this.elapsedTime,
       score: this.score,
       bestScore: this.bestScore,
-      orbsCollected: this.orbsCollected,
+      moonlightGathered: this.moonlightGathered,
       bloomBursts: this.bloomBursts,
       fullMoonTrialsSurvived: this.fullMoonTrialsSurvived,
       nightLevel: this.nightLevel,
       highestNightLevel: this.highestNightLevel,
+      bestNightLevel: this.bestNightLevel,
+      isNewBestNight: this.isNewBestNight,
+      runTitle: this.runTitle,
       levelUpMessageProgress: this.levelUpMessageTimer / this.levelUpMessageDuration,
       previousMoonPhaseIndex: this.previousMoonPhaseIndex,
       moonPhaseIndex: this.currentMoonPhaseIndex,
@@ -412,11 +441,13 @@ export class Game {
     this.audio.stopLowGlowWarning();
     this.elapsedTime = 0;
     this.score = 0;
-    this.orbsCollected = 0;
+    this.moonlightGathered = 0;
     this.bloomBursts = 0;
     this.fullMoonTrialsSurvived = 0;
     this.nightLevel = 1;
     this.highestNightLevel = 1;
+    this.isNewBestNight = false;
+    this.runTitle = '';
     this.glow = this.startingGlow;
     this.collectPulseTimer = 0;
     this.bloomBurstTimer = 0;
@@ -496,6 +527,8 @@ export class Game {
       return;
     }
 
+    this.runTitle = this.chooseRunTitle(this.highestNightLevel);
+    this.isNewBestNight = this.updateBestNight();
     this.updateBestScore();
     this.audio.stopMoonRainAmbience();
     this.audio.stopLowGlowWarning();
@@ -884,7 +917,7 @@ export class Game {
         const glowBeforeCollection = this.glow;
 
         this.score += orb.value;
-        this.orbsCollected += 1;
+        this.moonlightGathered += 1;
         this.restoreGlow(this.orbGlowRestore);
         this.audio.playOrbCollect();
 
@@ -1592,5 +1625,48 @@ export class Game {
     } catch {
       return 0;
     }
+  }
+
+  private updateBestNight(): boolean {
+    if (this.isDevScenario()) {
+      return false;
+    }
+
+    if (this.highestNightLevel <= this.bestNightLevel) {
+      return false;
+    }
+
+    this.bestNightLevel = this.highestNightLevel;
+
+    try {
+      window.localStorage.setItem(Game.bestNightStorageKey, String(this.bestNightLevel));
+    } catch {
+      // Best Night is nice-to-have. Gameplay should continue if storage is unavailable.
+    }
+
+    return true;
+  }
+
+  private loadBestNightLevel(): number {
+    try {
+      const storedNight = window.localStorage.getItem(Game.bestNightStorageKey);
+
+      if (!storedNight) {
+        return 0;
+      }
+
+      const parsedNight = Number.parseInt(storedNight, 10);
+      return Number.isFinite(parsedNight) && parsedNight > 0 ? parsedNight : 0;
+    } catch {
+      return 0;
+    }
+  }
+
+  private chooseRunTitle(nightLevel: number): string {
+    const tier = Game.runTitleTiers.find((candidate) => nightLevel >= candidate.minNight)
+      ?? Game.runTitleTiers[Game.runTitleTiers.length - 1];
+    const index = Math.floor(Math.random() * tier.titles.length);
+
+    return tier.titles[index] ?? 'Little Spark';
   }
 }

@@ -108,11 +108,14 @@ export type RenderSnapshot = {
   elapsedTime: number;
   score: number;
   bestScore: number;
-  orbsCollected: number;
+  moonlightGathered: number;
   bloomBursts: number;
   fullMoonTrialsSurvived: number;
   nightLevel: number;
   highestNightLevel: number;
+  bestNightLevel: number;
+  isNewBestNight: boolean;
+  runTitle: string;
   levelUpMessageProgress: number;
   previousMoonPhaseIndex: number;
   moonPhaseIndex: number;

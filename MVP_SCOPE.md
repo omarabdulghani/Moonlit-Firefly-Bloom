@@ -13,7 +13,8 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Desktop mouse/pointer movement.
 - Mobile-friendly touch movement with a default virtual joystick on phone/narrow screens.
 - Moonlight orbs that can be collected.
-- Score from collecting moonlight.
+- Internal/legacy score from collecting moonlight.
+- Moonlight gathered as the clearer player-facing collection stat.
 - Moonlight orbs expire and respawn to keep the playfield alive.
 - Shadow hazards.
 - Glow meter.
@@ -23,8 +24,8 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Stronger visual danger feedback on shadow contact.
 - Low-glow heartbeat warning audio.
 - Game over when glow reaches zero.
-- Final score display.
-- Best score saved with `localStorage`.
+- Game-over summary focused on Night reached, poetic title, Moonlight gathered, Time glowing, earned Full Moon milestones, and Best Night.
+- Best Night saved with `localStorage`.
 - Instant retry.
 - Responsive layout for desktop and mobile.
 - Bloom Burst reward at high/full glow.
@@ -42,8 +43,8 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 
 - Persistent flower/bloom trail scoring was removed for MVP clarity.
 - Powerups are temporary run-only pickups, not upgrades.
-- The game currently stores only local best score.
-- Developer scenario runs do not update local best score.
+- The game currently stores simple local records such as best score internally and player-facing Best Night.
+- Developer scenario runs do not update local records such as best score or Best Night.
 - WAV audio files are source/master assets only; normal runtime playback uses approved M4A/MP3 files.
 - The prototype is still primarily a core-fun test, not a full release.
 
@@ -73,7 +74,7 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Many enemy types.
 - Complex particle systems.
 - Complex asset pipelines.
-- Save files beyond local best score.
+- Save files beyond simple local records.
 - Server-side features.
 - Currency, skins, unlocks, ads, payments, or permanent progression.
 - PWA setup, Capacitor, native mobile packaging, or app-store files.
@@ -87,7 +88,7 @@ The MVP should prove the core arcade loop with the smallest complete playable ve
 - Shadows create tension without feeling cruel.
 - The glow meter is readable.
 - Game over and retry are fast.
-- Best score persists after refreshing the page.
+- Best Night persists after refreshing the page.
 - The game is playable on desktop and a mobile-sized viewport.
 - The codebase remains small and understandable.
 - Pause/resume behaves safely and does not drain glow while paused.
@@ -102,7 +103,8 @@ Use these questions during early playtests:
 - Can the player understand why they lost glow?
 - Does shadow avoidance feel fair?
 - Does the player want to retry immediately after losing?
-- Is the score motivating without adding complexity?
+- Does Night reached feel more rewarding than a raw score number?
+- Does the poetic title make game over feel warm and personal?
 - Does the game still feel cozy when the player is under pressure?
 - Do birds, stars, Moon Rain, and other atmosphere help without distracting?
 - Does Full Moon Blessing feel rewarding, clean, and readable when shadows vanish?

@@ -2032,7 +2032,7 @@ export class CanvasRenderer {
     const isNarrow = this.size.width < 420;
     const left = isNarrow ? 12 : 18;
     const top = isNarrow ? 12 : 16;
-    const width = Math.min(isNarrow ? 214 : 226, this.size.width - left * 2);
+    const width = Math.min(isNarrow ? 190 : 202, this.size.width - left * 2);
     const statusRows: Array<{ label: string; value?: string; color: string }> = [];
 
     if (snapshot.moonShieldRemaining > 0) {
@@ -2061,8 +2061,8 @@ export class CanvasRenderer {
       });
     }
 
-    const rowGap = isNarrow ? 24 : 26;
-    const panelHeight = (isNarrow ? 134 : 144) + statusRows.length * (isNarrow ? 22 : 24);
+    const rowGap = isNarrow ? 25 : 27;
+    const panelHeight = (isNarrow ? 86 : 92) + statusRows.length * (isNarrow ? 22 : 24);
     const paddingX = isNarrow ? 14 : 16;
     const firstRowY = top + (isNarrow ? 24 : 26);
 
@@ -2084,9 +2084,7 @@ export class CanvasRenderer {
     const contentLeft = left + paddingX;
     const contentWidth = width - paddingX * 2;
 
-    this.drawHudMetric('Score', snapshot.score.toString(), contentLeft, firstRowY, contentWidth);
-    this.drawHudMetric('Time', `${snapshot.elapsedTime.toFixed(1)}s`, contentLeft, firstRowY + rowGap, contentWidth);
-    this.drawHudMetric('Night', snapshot.nightLevel.toString(), contentLeft, firstRowY + rowGap * 2, contentWidth);
+    this.drawHudMetric('Night', snapshot.nightLevel.toString(), contentLeft, firstRowY, contentWidth);
     this.drawGlowMeter(
       snapshot.glow,
       snapshot.maxGlow,
@@ -2094,7 +2092,7 @@ export class CanvasRenderer {
       snapshot.moonShieldRemaining,
       snapshot.moonShieldDuration,
       contentLeft,
-      firstRowY + rowGap * 3 + 2,
+      firstRowY + rowGap + 2,
       contentWidth,
     );
 
@@ -2109,7 +2107,7 @@ export class CanvasRenderer {
       ctx.fillText(
         row.value ? `${row.label}: ${row.value}` : row.label,
         contentLeft,
-        firstRowY + rowGap * 4 + 8 + index * (isNarrow ? 21 : 23),
+        firstRowY + rowGap * 2 + 8 + index * (isNarrow ? 21 : 23),
       );
       ctx.restore();
     }
@@ -2239,34 +2237,81 @@ export class CanvasRenderer {
   }
 
   private drawGameOverSummary(snapshot: RenderSnapshot, x: number, centerY: number): void {
-    const panelWidth = Math.max(1, Math.min(480, this.size.width - 28));
-    const panelHeight = Math.max(292, Math.min(this.size.height - 28, this.size.height < 520 ? 320 : 390));
+    const timeGlowingSeconds = Math.max(0, Math.round(snapshot.elapsedTime));
+    const runTitle = snapshot.runTitle || 'Little Spark';
+    const runStats: Array<{ label: string; value: string }> = [];
+
+    if (snapshot.moonlightGathered > 0) {
+      runStats.push({ label: 'Moonlight gathered', value: snapshot.moonlightGathered.toString() });
+    }
+
+    if (snapshot.fullMoonTrialsSurvived > 0) {
+      runStats.push({ label: 'Full Moons witnessed', value: snapshot.fullMoonTrialsSurvived.toString() });
+    }
+
+    runStats.push(
+      { label: 'Time glowing', value: `${timeGlowingSeconds}s` },
+      { label: 'Best Night', value: snapshot.bestNightLevel.toString() },
+    );
+    const isNarrow = this.size.width < 420;
+    const compact = isNarrow || this.size.height < 560;
+    const spacing = {
+      cardPaddingY: compact ? 40 : 46,
+      headingToNewBestGap: compact ? 30 : 34,
+      newBestToReachedGap: compact ? 30 : 32,
+      headingToReachedGap: compact ? 44 : 48,
+      reachedToTitleLabelGap: compact ? 38 : 42,
+      titleLabelToTitleGap: compact ? 31 : 32,
+      titleToStatsGap: compact ? 32 : 33,
+      statRowGap: compact ? 25 : 27,
+      statsToCtaGap: compact ? 48 : 52,
+    };
+    const headerGap = snapshot.isNewBestNight
+      ? spacing.headingToNewBestGap + spacing.newBestToReachedGap
+      : spacing.headingToReachedGap;
+    const statBlockHeight = Math.max(0, runStats.length - 1) * spacing.statRowGap;
+    const contentBaselineSpan =
+      headerGap +
+      spacing.reachedToTitleLabelGap +
+      spacing.titleLabelToTitleGap +
+      spacing.titleToStatsGap +
+      statBlockHeight +
+      spacing.statsToCtaGap;
+    const contentVisualHeight = contentBaselineSpan + (compact ? 42 : 46);
+    const panelWidth = Math.max(1, Math.min(isNarrow ? 370 : 460, this.size.width - (isNarrow ? 28 : 32)));
+    const desiredPanelHeight = contentVisualHeight + spacing.cardPaddingY * 2;
+    const panelHeight = Math.max(compact ? 338 : 360, Math.min(this.size.height - 28, desiredPanelHeight));
     const top = centerY - panelHeight / 2;
     const bottom = top + panelHeight;
-    const compact = panelHeight < 350;
-    const paddingX = this.size.width < 420 ? 24 : 34;
+    const paddingX = isNarrow ? 24 : 34;
     const contentWidth = panelWidth - paddingX * 2;
-    const titleY = top + (compact ? 36 : 46);
-    const summaryY = titleY + (compact ? 30 : 38);
-    const scoreY = summaryY + (compact ? 42 : 50);
-    const statsTop = scoreY + (compact ? 38 : 52);
-    const statRowGap = compact ? 46 : 56;
-    const columnOffset = panelWidth * 0.23;
-    const columnWidth = Math.max(100, (contentWidth - 18) / 2);
-    const fullMoonStatY = bottom - (compact ? 58 : 70);
+    const titleY = centerY - contentBaselineSpan / 2;
+    let cursorY = titleY;
 
     this.drawSoftPanel(x, centerY, panelWidth, panelHeight);
     this.drawTitle('Glow Faded', x, titleY, contentWidth);
-    this.drawHint(`You kept the light alive for ${snapshot.elapsedTime.toFixed(1)}s.`, x, summaryY, contentWidth);
-    this.drawPrimaryStat(`Score: ${snapshot.score}`, x, scoreY, contentWidth);
 
-    this.drawGameOverStat('Best', snapshot.bestScore.toString(), x - columnOffset, statsTop, columnWidth);
-    this.drawGameOverStat('Deepest Night', snapshot.highestNightLevel.toString(), x + columnOffset, statsTop, columnWidth);
-    this.drawGameOverStat('Moonlight Orbs', snapshot.orbsCollected.toString(), x - columnOffset, statsTop + statRowGap, columnWidth);
-    this.drawGameOverStat('Blooms', snapshot.bloomBursts.toString(), x + columnOffset, statsTop + statRowGap, columnWidth);
-    this.drawHint(`Full Moons Survived: ${snapshot.fullMoonTrialsSurvived}`, x, fullMoonStatY, contentWidth);
+    if (snapshot.isNewBestNight) {
+      cursorY += spacing.headingToNewBestGap;
+      this.drawGameOverNewBest('New Deepest Night', x, cursorY, contentWidth);
+      cursorY += spacing.newBestToReachedGap;
+    } else {
+      cursorY += spacing.headingToReachedGap;
+    }
 
-    this.drawSubtitle('Click / Tap to fly again', x, bottom - (compact ? 28 : 36), contentWidth);
+    this.drawPrimaryStat(`You reached Night ${snapshot.highestNightLevel}.`, x, cursorY, contentWidth);
+    cursorY += spacing.reachedToTitleLabelGap;
+    this.drawGameOverLabel('The moon called you', x, cursorY, contentWidth);
+    cursorY += spacing.titleLabelToTitleGap;
+    this.drawGameOverRunTitle(runTitle, x, cursorY, contentWidth);
+    cursorY += spacing.titleToStatsGap;
+
+    runStats.forEach((stat, index) => {
+      this.drawGameOverStatLine(stat.label, stat.value, x, cursorY + index * spacing.statRowGap, contentWidth);
+    });
+    cursorY += statBlockHeight + spacing.statsToCtaGap;
+
+    this.drawGameOverCta('Click / Tap to glow again', x, Math.min(cursorY, bottom - spacing.cardPaddingY * 0.72), contentWidth);
   }
 
   private drawSoftPanel(x: number, y: number, width: number, height: number): void {
@@ -2457,6 +2502,18 @@ export class CanvasRenderer {
     ctx.fillStyle = '#f9edc5';
   }
 
+  private drawGameOverNewBest(text: string, x: number, y: number, maxWidth: number): void {
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 224, 151, 0.26)';
+    ctx.shadowBlur = 10;
+    ctx.fillStyle = 'rgba(255, 239, 184, 0.96)';
+    this.setFittedFont('700', 18, 15, text, maxWidth);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
   private drawPrimaryStat(text: string, x: number, y: number, maxWidth = this.size.width - 32): void {
     const ctx = this.context;
     ctx.fillStyle = '#fff2b8';
@@ -2473,19 +2530,70 @@ export class CanvasRenderer {
     ctx.fillStyle = '#f9edc5';
   }
 
-  private drawGameOverStat(label: string, value: string, x: number, y: number, maxWidth: number): void {
+  private drawGameOverLabel(text: string, x: number, y: number, maxWidth: number): void {
     const ctx = this.context;
 
     ctx.save();
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(248, 240, 201, 0.62)';
-    this.setFittedFont('500', 12, 10, label, maxWidth);
-    ctx.fillText(label, x, y);
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.58)';
+    this.setFittedFont('500', 13, 11, text, maxWidth);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
 
+  private drawGameOverRunTitle(text: string, x: number, y: number, maxWidth: number): void {
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 222, 148, 0.28)';
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = 'rgba(255, 241, 185, 0.98)';
+    this.setFittedFont('700', 22, 17, text, maxWidth);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  private drawGameOverCta(text: string, x: number, y: number, maxWidth: number): void {
+    const ctx = this.context;
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(255, 222, 148, 0.16)';
+    ctx.shadowBlur = 8;
     ctx.fillStyle = '#fff0b8';
-    this.setFittedFont('700', 18, 15, value, maxWidth);
-    ctx.fillText(value, x, y + 20);
+    this.setFittedFont('600', 19, 15, text, maxWidth);
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  private drawGameOverStatLine(label: string, value: string, x: number, y: number, maxWidth: number): void {
+    const ctx = this.context;
+    const labelText = `${label}: `;
+    const maxTextWidth = Math.max(120, maxWidth);
+    let fontSize = 14;
+    let labelWidth = 0;
+    let valueWidth = 0;
+
+    while (fontSize > 11) {
+      ctx.font = `500 ${fontSize}px Inter, system-ui, sans-serif`;
+      labelWidth = ctx.measureText(labelText).width;
+      ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
+      valueWidth = ctx.measureText(value).width;
+
+      if (labelWidth + valueWidth <= maxTextWidth) {
+        break;
+      }
+
+      fontSize -= 1;
+    }
+
+    ctx.save();
+    ctx.textBaseline = 'middle';
+    ctx.textAlign = 'left';
+    ctx.font = `500 ${fontSize}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(248, 240, 201, 0.62)';
+    ctx.fillText(labelText, x - (labelWidth + valueWidth) / 2, y);
+    ctx.font = `700 ${fontSize}px Inter, system-ui, sans-serif`;
+    ctx.fillStyle = 'rgba(255, 240, 184, 0.92)';
+    ctx.fillText(value, x - (labelWidth + valueWidth) / 2 + labelWidth, y);
     ctx.restore();
   }
 

@@ -16,7 +16,7 @@ Implemented:
 - Mobile virtual joystick for phone/narrow screens.
 - Moonlight orbs with scoring, glow restore, lifetime, and respawn behavior.
 - Shadow hazards that drain glow and trigger stronger danger feedback.
-- Passive glow drain, low-glow warning audio, and local best score.
+- Passive glow drain, low-glow warning audio, local best score, and player-facing Best Night.
 - Bloom Burst reward moments at high/full glow.
 - Night Level escalation and a visual moon phase cycle.
 - Later Full Moon Blessing events with moon-white glow protection, plant-side magical fireflies, shadow disappearance, and delayed Moon Rain.
@@ -26,6 +26,7 @@ Implemented:
 - Rooftop background assets with enlarged side plants, animated night birds, additional stars, and occasional shooting stars.
 - Pause/resume flow through `Esc`, browser blur, tab switching, and page visibility changes.
 - Hidden URL-based developer test scenarios for Full Moon and Moon Rain event QA.
+- Simplified live HUD focused on Night and Glow, plus a warmer game-over reward summary with Moonlight gathered and poetic run titles.
 
 Still not implemented:
 
@@ -74,7 +75,7 @@ The local prototype now answers most of the technical MVP questions. The next ma
 
 ## Where We Stand
 
-The project is currently ready for focused private playtesting. The latest work stabilized mobile audio playback, switched runtime audio to Omar-approved M4A/MP3 files, refined mobile controls with a virtual joystick, and polished the Full Moon/Moon Rain event flow without adding long-term progression systems.
+The project is currently ready for focused private playtesting. The latest work stabilized mobile audio playback, switched runtime audio to Omar-approved M4A/MP3 files, refined mobile controls with a virtual joystick, polished the Full Moon/Moon Rain event flow, and shifted run rewards toward deepest Night reached instead of raw score chasing.
 
 Recommended next work:
 
