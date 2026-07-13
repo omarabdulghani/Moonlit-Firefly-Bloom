@@ -1,6 +1,6 @@
 # Moonlit Firefly Bloom
 
-> **[Play it Live here (Add Link)](#)** <!-- Placeholder for live demo -->
+> **[Play it Live here](https://moonlit-firefly-bloom.vercel.app/)**
 
 <!-- 🖼️ TODO: Add a Gameplay GIF or Screenshot here:
 ![Moonlit Firefly Bloom Gameplay](./path/to/screenshot.png) 
