@@ -1,8 +1,21 @@
 # Moonlit Firefly Bloom
 
+> **[Play it Live here (Add Link)](#)** <!-- Placeholder for live demo -->
+
+![Moonlit Firefly Bloom Gameplay](https://via.placeholder.com/800x450.png?text=Gameplay+GIF/Screenshot+Here) <!-- Placeholder for GIF -->
+
 Moonlit Firefly Bloom is a cozy browser-first arcade game about guiding a tiny glowing firefly across a moonlit rooftop, collecting light, avoiding creeping shadows, and surviving deeper into the night.
 
 The game should feel simple, magical, readable, and replayable: fly, gather light, stay glowing, trigger satisfying Bloom moments, survive a little longer, and instantly try again.
+
+## Tech Stack & Architecture
+
+This project is a showcase of building performant, zero-dependency game engines from scratch for the browser.
+
+- **Zero-Dependency Core:** Built using **TypeScript** and **pure HTML5 Canvas 2D**. No external game engines (like Phaser or PixiJS) or framework dependencies (like React) were used.
+- **Snapshot-Based Architecture:** The game cleanly separates logic from rendering. `Game.update()` mutates state and creates an immutable `RenderSnapshot`, which is then passed to the `CanvasRenderer` to draw the frame. This ensures safe, bug-free rendering logic.
+- **Build Tooling:** Packaged and served locally using **Vite**.
+- **Responsive Design:** Native support for both desktop (keyboard/mouse) and mobile (touch/virtual joystick) environments.
 
 ## Current Status
 
