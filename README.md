@@ -2,7 +2,9 @@
 
 > **[Play it Live here (Add Link)](#)** <!-- Placeholder for live demo -->
 
-![Moonlit Firefly Bloom Gameplay](https://via.placeholder.com/800x450.png?text=Gameplay+GIF/Screenshot+Here) <!-- Placeholder for GIF -->
+<!-- 🖼️ TODO: Add a Gameplay GIF or Screenshot here:
+![Moonlit Firefly Bloom Gameplay](./path/to/screenshot.png) 
+-->
 
 Moonlit Firefly Bloom is a cozy browser-first arcade game about guiding a tiny glowing firefly across a moonlit rooftop, collecting light, avoiding creeping shadows, and surviving deeper into the night.
 
